@@ -2,9 +2,12 @@ package org.example.mindmappingsoftware.repositories;
 
 import org.example.mindmappingsoftware.models.MindMap;
 import org.example.mindmappingsoftware.models.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-public interface MindMapRepository extends Repository<MindMap, Long> {
+@Repository
+public interface MindMapRepository extends JpaRepository<MindMap, Long> {
     List<MindMap> findByCreator(User user);
 }

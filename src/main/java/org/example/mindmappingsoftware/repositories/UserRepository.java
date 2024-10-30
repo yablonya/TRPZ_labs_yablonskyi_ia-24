@@ -1,7 +1,10 @@
 package org.example.mindmappingsoftware.repositories;
 
 import org.example.mindmappingsoftware.models.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
-public interface UserRepository extends Repository<User, Long> {
+@Repository
+public interface UserRepository extends JpaRepository<User, Long> {
     User findByEmail(String email);
 }
