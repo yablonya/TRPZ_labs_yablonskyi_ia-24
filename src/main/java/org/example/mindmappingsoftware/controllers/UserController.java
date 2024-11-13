@@ -2,10 +2,10 @@ package org.example.mindmappingsoftware.controllers;
 
 import org.example.mindmappingsoftware.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-@Controller
+@RestController
 @RequestMapping("/user")
 public class UserController {
     private final UserService userService;
@@ -15,4 +15,5 @@ public class UserController {
         this.userService = userService;
     }
 }
+
 

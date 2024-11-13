@@ -1,9 +1,16 @@
 package org.example.mindmappingsoftware.models;
 
+import jakarta.persistence.*;
+
 import java.util.Date;
 
+@Entity
 public class Node {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @ManyToOne
+    @JoinColumn(name = "mind_map_id")
     private MindMap mindMap;
     private String content;
     private String priority;

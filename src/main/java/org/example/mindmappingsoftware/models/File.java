@@ -1,7 +1,15 @@
 package org.example.mindmappingsoftware.models;
 
+
+import jakarta.persistence.*;
+
+@Entity
 public class File {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @ManyToOne
+    @JoinColumn(name = "node_id")
     private Node node;
     private String filePath;
     private String type;

@@ -5,14 +5,14 @@ import org.example.mindmappingsoftware.models.Node;
 import org.example.mindmappingsoftware.services.MindMapService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-@Controller
+@RestController
 @RequestMapping("/mind-map")
 public class MindMapController {
     private final MindMapService mindMapService;
@@ -28,4 +28,5 @@ public class MindMapController {
         return ResponseEntity.ok("Nodes processed successfully.");
     }
 }
+
 

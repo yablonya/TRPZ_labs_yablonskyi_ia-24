@@ -1,10 +1,19 @@
 package org.example.mindmappingsoftware.models;
 
+import jakarta.persistence.*;
+
 import java.util.Date;
 
+@Entity
 public class Comment {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @ManyToOne
+    @JoinColumn(name = "mind_map_id")
     private MindMap mindMap;
+    @ManyToOne
+    @JoinColumn(name = "author_id")
     private User author;
     private String content;
     private final Date creationDate;
