@@ -9,5 +9,5 @@ import java.util.List;
 
 @Repository
 public interface NodeRepository extends JpaRepository<Node, Long> {
-    List<Node> findByMindMap(MindMap mindMap);
+    List<Node> findAllByMindMap(MindMap mindMap);
 }

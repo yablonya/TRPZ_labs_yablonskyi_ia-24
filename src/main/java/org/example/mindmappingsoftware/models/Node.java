@@ -12,7 +12,10 @@ public class Node {
     @ManyToOne
     @JoinColumn(name = "mind_map_id")
     private MindMap mindMap;
+    private String type;
     private String content;
+    private String xPosition;
+    private String yPosition;
     private String priority;
     private String category;
     private final Date creationDate;
@@ -37,12 +40,36 @@ public class Node {
         this.mindMap = mindMap;
     }
 
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
     public String getContent() {
         return content;
     }
 
     public void setContent(String content) {
         this.content = content;
+    }
+
+    public String getXPosition() {
+        return xPosition;
+    }
+
+    public void setXPosition(String xPosition) {
+        this.xPosition = xPosition;
+    }
+
+    public String getYPosition() {
+        return yPosition;
+    }
+
+    public void setYPosition(String yPosition) {
+        this.yPosition = yPosition;
     }
 
     public String getPriority() {

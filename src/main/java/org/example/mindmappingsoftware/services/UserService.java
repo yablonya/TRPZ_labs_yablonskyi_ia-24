@@ -1,14 +1,16 @@
 package org.example.mindmappingsoftware.services;
 
 import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletResponse;
 import org.example.mindmappingsoftware.models.User;
 import org.example.mindmappingsoftware.prototypes.CookiePrototype;
 import org.example.mindmappingsoftware.repositories.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
+
+import java.util.NoSuchElementException;
 
 @Service
 public class UserService {
@@ -47,24 +49,50 @@ public class UserService {
         return user;
     }
 
+    public User getUser(Long userId) {
+        User user = userRepository.findById(userId).orElse(null);
+
+        if (user == null) {
+            logger.warn("User with ID {} not found", userId);
+            throw new NoSuchElementException("There is no user with such ID");
+        }
+
+        return user;
+    }
+
     private User createUser(String name, String email, String password) {
         User user = new User();
         user.setName(name);
         user.setEmail(email);
         user.setPassword(password);
+
         return user;
     }
 
-    public void addUserIdToCookie(HttpServletResponse response, User user) {
+    public HttpHeaders addUserIdToCookie(User user) {
         Cookie cookie = userCookiePrototype.cloneWithValue(String.valueOf(user.getId()));
-        response.addCookie(cookie);
         logger.info("User cookie added with ID: {}", user.getId());
+
+        HttpHeaders newHeaders = new HttpHeaders();
+        newHeaders.add(
+                "Set-Cookie",
+                cookie.getName() + "=" + cookie.getValue() + "; Path=/; HttpOnly; Max-Age=86400"
+        );
+
+        return newHeaders;
     }
 
-    public void clearUserCookie(HttpServletResponse response) {
+    public HttpHeaders clearUserCookie() {
         Cookie cookie = userCookiePrototype.cloneAsCleared();
-        response.addCookie(cookie);
         logger.info("User cookie cleared.");
+
+        HttpHeaders newHeaders = new HttpHeaders();
+        newHeaders.add(
+                "Set-Cookie",
+                cookie.getName() + "=" + cookie.getValue() + "; Path=/; HttpOnly; Max-Age=86400"
+        );
+
+        return newHeaders;
     }
 }
 
