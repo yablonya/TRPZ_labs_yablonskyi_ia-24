@@ -1,10 +1,19 @@
 package org.example.mindmappingsoftware.models;
 
+import jakarta.persistence.*;
+
 import java.util.Date;
 
+@Entity
 public class Connection {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @OneToOne
+    @JoinColumn(name = "from_node_id")
     private Node fromNode;
+    @OneToOne
+    @JoinColumn(name = "to_node_id")
     private Node toNode;
     private String style;
     private String category;

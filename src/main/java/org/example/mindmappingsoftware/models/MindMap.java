@@ -1,9 +1,16 @@
 package org.example.mindmappingsoftware.models;
 
+import jakarta.persistence.*;
+
 import java.util.Date;
 
+@Entity
 public class MindMap {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @ManyToOne
+    @JoinColumn(name = "creator_id")
     private User creator;
     private String name;
     private String title;

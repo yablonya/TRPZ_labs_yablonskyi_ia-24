@@ -1,8 +1,14 @@
 package org.example.mindmappingsoftware.models;
 
+import jakarta.persistence.*;
+
 import java.util.Date;
 
+@Entity
+@Table(name = "\"user\"")
 public class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String name;
     private String password;
@@ -58,3 +64,4 @@ public class User {
         return creationDate;
     }
 }
+
