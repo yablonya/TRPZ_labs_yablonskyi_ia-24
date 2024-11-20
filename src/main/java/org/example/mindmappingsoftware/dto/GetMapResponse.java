@@ -1,5 +1,7 @@
 package org.example.mindmappingsoftware.dto;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.example.mindmappingsoftware.mementos.MindMapMemento;
 import org.example.mindmappingsoftware.models.MindMap;
 import org.example.mindmappingsoftware.models.Node;
 
@@ -23,5 +25,18 @@ public class GetMapResponse {
 
     public void setNodes(List<Node> nodes) {
         this.nodes = nodes;
+    }
+
+    public MindMapMemento saveState() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        String snapshot = mapper.writeValueAsString(this);
+        return new MindMapMemento(snapshot);
+    }
+
+    public void restoreState(MindMapMemento memento) throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        GetMapResponse restored = mapper.readValue(memento.getSnapshot(), GetMapResponse.class);
+        this.mindMap = restored.getMindMap();
+        this.nodes = restored.getNodes();
     }
 }
