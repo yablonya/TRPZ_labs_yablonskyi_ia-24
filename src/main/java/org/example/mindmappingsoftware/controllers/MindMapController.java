@@ -1,11 +1,10 @@
 package org.example.mindmappingsoftware.controllers;
 
-import org.example.mindmappingsoftware.dto.GetMapResponse;
-import org.example.mindmappingsoftware.dto.GetMapResponseWithDate;
+import org.example.mindmappingsoftware.dto.FullMindMap;
 import org.example.mindmappingsoftware.dto.NodeCreationRequest;
 import org.example.mindmappingsoftware.models.MindMap;
-import org.example.mindmappingsoftware.models.MindMapHistory;
 import org.example.mindmappingsoftware.models.User;
+import org.example.mindmappingsoftware.services.MindMapHistoryService;
 import org.example.mindmappingsoftware.services.MindMapService;
 import org.example.mindmappingsoftware.services.UserService;
 import org.slf4j.Logger;
@@ -24,12 +23,18 @@ import java.util.NoSuchElementException;
 @RequestMapping("/api/mind-map")
 public class MindMapController {
     private final MindMapService mindMapService;
+    private final MindMapHistoryService mindMapHistoryService;
     private final UserService userService;
     private static final Logger logger = LoggerFactory.getLogger(MindMapController.class);
 
     @Autowired
-    public MindMapController(MindMapService mindMapService, UserService userService) {
+    public MindMapController(
+            MindMapService mindMapService,
+            MindMapHistoryService mindMapHistoryService,
+            UserService userService
+    ) {
         this.mindMapService = mindMapService;
+        this.mindMapHistoryService = mindMapHistoryService;
         this.userService = userService;
     }
 
@@ -76,7 +81,7 @@ public class MindMapController {
         try {
             User user = validateUser(userId);
 
-            GetMapResponse mindMap = mindMapService.getFullMindMap(user, mindMapId);
+            FullMindMap mindMap = mindMapService.getFullMindMap(user, mindMapId);
 
             return ResponseEntity.status(HttpStatus.OK).body(mindMap);
         } catch (IllegalStateException e) {
@@ -118,7 +123,7 @@ public class MindMapController {
         try {
             validateUser(userId);
 
-            mindMapService.saveMindMapState(id);
+            mindMapHistoryService.saveMindMapState(id);
 
             return ResponseEntity.ok("State saved successfully");
         } catch (IllegalStateException e) {
@@ -140,7 +145,7 @@ public class MindMapController {
 
             LocalDateTime parsedDate = LocalDateTime.parse(restoreDate);
             logger.info("{}", parsedDate);
-            mindMapService.restoreMindMapState(id, parsedDate);
+            mindMapHistoryService.restoreMindMapState(id, parsedDate);
 
             return ResponseEntity.ok("State restored successfully to snapshot at " + restoreDate);
         } catch (IllegalStateException e) {
@@ -163,7 +168,7 @@ public class MindMapController {
         try {
             validateUser(userId);
 
-            List<GetMapResponseWithDate> history = mindMapService.getMindMapHistory(id);
+            List<FullMindMap> history = mindMapHistoryService.getMindMapHistory(id);
 
             return ResponseEntity.ok(history);
         } catch (IllegalStateException e) {

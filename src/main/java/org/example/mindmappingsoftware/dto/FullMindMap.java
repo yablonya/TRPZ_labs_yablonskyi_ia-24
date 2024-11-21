@@ -5,11 +5,13 @@ import org.example.mindmappingsoftware.mementos.MindMapMemento;
 import org.example.mindmappingsoftware.models.MindMap;
 import org.example.mindmappingsoftware.models.Node;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
-public class GetMapResponse {
+public class FullMindMap {
     private MindMap mindMap;
     private List<Node> nodes;
+    private LocalDateTime savedAt;
 
     public MindMap getMindMap() {
         return mindMap;
@@ -27,6 +29,14 @@ public class GetMapResponse {
         this.nodes = nodes;
     }
 
+    public LocalDateTime getSavedAt() {
+        return savedAt;
+    }
+
+    public void setSavedAt(LocalDateTime savedAt) {
+        this.savedAt = savedAt;
+    }
+
     public MindMapMemento saveState() throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         String snapshot = mapper.writeValueAsString(this);
@@ -35,7 +45,7 @@ public class GetMapResponse {
 
     public void restoreState(MindMapMemento memento) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
-        GetMapResponse restored = mapper.readValue(memento.getSnapshot(), GetMapResponse.class);
+        FullMindMap restored = mapper.readValue(memento.getSnapshot(), FullMindMap.class);
         this.mindMap = restored.getMindMap();
         this.nodes = restored.getNodes();
     }

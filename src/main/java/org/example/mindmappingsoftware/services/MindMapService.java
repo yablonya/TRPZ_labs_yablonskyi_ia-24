@@ -1,9 +1,7 @@
 package org.example.mindmappingsoftware.services;
 
-import org.example.mindmappingsoftware.dto.GetMapResponse;
-import org.example.mindmappingsoftware.dto.GetMapResponseWithDate;
+import org.example.mindmappingsoftware.dto.FullMindMap;
 import org.example.mindmappingsoftware.dto.NodeCreationRequest;
-import org.example.mindmappingsoftware.mementos.MindMapMemento;
 import org.example.mindmappingsoftware.models.*;
 import org.example.mindmappingsoftware.repositories.*;
 import org.example.mindmappingsoftware.strategies.NodeProcessingStrategy;
@@ -13,18 +11,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.stream.Collectors;
 
 @Service
 public class MindMapService {
     private final MindMapRepository mindMapRepository;
-    private final MindMapHistoryRepository mindMapHistoryRepository;
     private final NodeRepository nodeRepository;
     private final ConnectionRepository connectionRepository;
     private final IconRepository iconRepository;
@@ -35,7 +28,6 @@ public class MindMapService {
     @Autowired
     public MindMapService(
             MindMapRepository mindMapRepository,
-            MindMapHistoryRepository mindMapHistoryRepository,
             NodeRepository nodeRepository,
             ConnectionRepository connectionRepository,
             IconRepository iconRepository,
@@ -43,7 +35,6 @@ public class MindMapService {
             CommentRepository commentRepository
     ) {
         this.mindMapRepository = mindMapRepository;
-        this.mindMapHistoryRepository = mindMapHistoryRepository;
         this.nodeRepository = nodeRepository;
         this.connectionRepository = connectionRepository;
         this.iconRepository = iconRepository;
@@ -84,7 +75,7 @@ public class MindMapService {
         }
     }
 
-    public GetMapResponse getFullMindMap(User user, Long mindMapId) {
+    public FullMindMap getFullMindMap(User user, Long mindMapId) {
         try {
             MindMap mindMap = getMindMap(mindMapId);
 
@@ -94,7 +85,7 @@ public class MindMapService {
             }
 
             List<Node> nodes = nodeRepository.findAllByMindMap(mindMap);
-            GetMapResponse fullMindMap = new GetMapResponse();
+            FullMindMap fullMindMap = new FullMindMap();
             fullMindMap.setMindMap(mindMap);
             fullMindMap.setNodes(nodes);
 
@@ -138,88 +129,6 @@ public class MindMapService {
         } catch (Exception e) {
             logger.error("Error adding node: {}", e.getMessage());
             throw new RuntimeException("Failed to add node", e);
-        }
-    }
-
-    public void saveMindMapState(Long mindMapId) {
-        try {
-            GetMapResponse fullMindMap = getFullMindMap(getMindMap(mindMapId).getCreator(), mindMapId);
-            MindMapMemento memento = fullMindMap.saveState();
-
-            MindMapHistory history = new MindMapHistory();
-            history.setMindMap(fullMindMap.getMindMap());
-            history.setSnapshot(memento.getSnapshot());
-            history.setSavedAt(LocalDateTime.now());
-
-            mindMapHistoryRepository.save(history);
-
-            logger.info("Saved state for mind map with ID {}", mindMapId);
-        } catch (NoSuchElementException e) {
-            logger.warn("Failed to save state: Mind map with ID {} not found", mindMapId);
-            throw e;
-        } catch (Exception e) {
-            logger.error("Error saving state for mind map with ID {}: {}", mindMapId, e.getMessage());
-            throw new RuntimeException("Failed to save mind map state", e);
-        }
-    }
-
-    @Transactional
-    public void restoreMindMapState(Long mindMapId, LocalDateTime restoreDate) {
-        try {
-            MindMapHistory snapshot = mindMapHistoryRepository
-                    .findByMindMapIdAndSavedAt(mindMapId, restoreDate);
-
-            if (snapshot == null) {
-                logger.warn("No saved state found for mind map with ID {} before {}", mindMapId, restoreDate);
-                throw new NoSuchElementException("No saved state found for MindMap with ID: " + mindMapId + " before " + restoreDate);
-            }
-
-            MindMapMemento memento = new MindMapMemento(snapshot.getSnapshot());
-            GetMapResponse restoredMap = new GetMapResponse();
-            restoredMap.restoreState(memento);
-
-            nodeRepository.deleteAllByMindMapId(mindMapId);
-
-            nodeRepository.saveAll(restoredMap.getNodes());
-
-            logger.info("Restored state for mind map with ID {} to snapshot at {}", mindMapId, restoreDate);
-        } catch (NoSuchElementException e) {
-            logger.warn("Failed to restore state: {}", e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            logger.error("Error restoring state for mind map with ID {}: {}", mindMapId, e.getMessage());
-            throw new RuntimeException("Failed to restore mind map state", e);
-        }
-    }
-
-    public List<GetMapResponseWithDate> getMindMapHistory(Long mindMapId) {
-        try {
-            List<MindMapHistory> history = mindMapHistoryRepository.findAllByMindMapIdOrderBySavedAtDesc(mindMapId);
-
-            if (history.isEmpty()) {
-                logger.warn("No history found for mind map with ID {}", mindMapId);
-                return Collections.emptyList();
-            }
-
-            List<GetMapResponseWithDate> responseHistory = history.stream()
-                    .map(entry -> {
-                        try {
-                            MindMapMemento memento = new MindMapMemento(entry.getSnapshot());
-                            GetMapResponse response = new GetMapResponse();
-                            response.restoreState(memento);
-                            return new GetMapResponseWithDate(response, entry.getSavedAt());
-                        } catch (Exception e) {
-                            logger.error("Error deserializing snapshot for mind map with ID {}: {}", mindMapId, e.getMessage());
-                            throw new RuntimeException("Error deserializing snapshot", e);
-                        }
-                    })
-                    .collect(Collectors.toList());
-
-            logger.info("Retrieved history for mind map with ID {}", mindMapId);
-            return responseHistory;
-        } catch (Exception e) {
-            logger.error("Error retrieving history for mind map with ID {}: {}", mindMapId, e.getMessage());
-            throw new RuntimeException("Failed to retrieve mind map history", e);
         }
     }
 }
