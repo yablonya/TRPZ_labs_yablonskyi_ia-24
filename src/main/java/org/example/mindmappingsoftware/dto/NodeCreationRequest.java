@@ -5,20 +5,12 @@ import org.example.mindmappingsoftware.models.File;
 import java.util.List;
 
 public class NodeCreationRequest {
-    private String type;
     private String content;
+    private String iconInfo;
     private String xPosition;
     private String yPosition;
     private String mindMapId;
     private List<File> nodeFiles;
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
 
     public String getContent() {
         return content;
@@ -26,6 +18,14 @@ public class NodeCreationRequest {
 
     public void setContent(String content) {
         this.content = content;
+    }
+
+    public String getIconInfo() {
+        return iconInfo;
+    }
+
+    public void setIconInfo(String iconInfo) {
+        this.iconInfo = iconInfo;
     }
 
     public String getXPosition() {
