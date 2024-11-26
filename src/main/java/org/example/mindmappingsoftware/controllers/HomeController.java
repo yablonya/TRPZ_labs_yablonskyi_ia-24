@@ -8,6 +8,8 @@ import org.example.mindmappingsoftware.services.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,16 +25,14 @@ public class HomeController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(
-            @RequestBody UserRegistrationRequest request,
-            HttpServletResponse response
-    ) {
+    public ResponseEntity<?> registerUser(@RequestBody UserRegistrationRequest request) {
         try {
             User registeredUser = userService.registerUser(request.getName(), request.getEmail(), request.getPassword());
-            userService.addUserIdToCookie(response, registeredUser);
+            HttpHeaders newHeaders = userService.addUserIdToCookie(registeredUser);
 
             logger.info("User registered with email: {}", registeredUser.getEmail());
-            return ResponseEntity.ok(registeredUser);
+
+            return ResponseEntity.status(HttpStatus.CREATED).headers(newHeaders).body(registeredUser);
         } catch (IllegalArgumentException e) {
             logger.error("Registration error: {}", e.getMessage());
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -46,9 +46,9 @@ public class HomeController {
     ) {
         try {
             User user = userService.loginUser(request.getEmail(), request.getPassword());
-            userService.addUserIdToCookie(response, user);
+            HttpHeaders newHeaders = userService.addUserIdToCookie(user);
 
-            return ResponseEntity.ok(user);
+            return ResponseEntity.status(HttpStatus.OK).headers(newHeaders).body(user);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(401).body(e.getMessage());
         }
@@ -57,9 +57,10 @@ public class HomeController {
     @PostMapping("/logout")
     public ResponseEntity<?> logoutUser(HttpServletResponse response) {
         try {
-            userService.clearUserCookie(response);
+            HttpHeaders newHeaders = userService.clearUserCookie();
             logger.info("User logged out successfully.");
-            return ResponseEntity.ok("Logout successful.");
+
+            return ResponseEntity.status(HttpStatus.OK).headers(newHeaders).build();
         } catch (Exception e) {
             logger.error("Logout error: {}", e.getMessage());
             return ResponseEntity.status(500).body("An error occurred during logout.");
