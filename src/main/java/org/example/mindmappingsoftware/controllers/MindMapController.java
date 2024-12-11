@@ -21,6 +21,7 @@ import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/mind-map")
+@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class MindMapController {
     private final MindMapService mindMapService;
     private final MindMapHistoryService mindMapHistoryService;

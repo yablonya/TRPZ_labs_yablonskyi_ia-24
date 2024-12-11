@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/")
+@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class HomeController {
     private final UserService userService;
     private static final Logger logger = LoggerFactory.getLogger(HomeController.class);

@@ -76,7 +76,7 @@ public class UserService {
         HttpHeaders newHeaders = new HttpHeaders();
         newHeaders.add(
                 "Set-Cookie",
-                cookie.getName() + "=" + cookie.getValue() + "; Path=/; HttpOnly; Max-Age=86400"
+                cookie.getName() + "=" + cookie.getValue() + "; Path=/; Max-Age=86400"
         );
 
         return newHeaders;
@@ -89,7 +89,7 @@ public class UserService {
         HttpHeaders newHeaders = new HttpHeaders();
         newHeaders.add(
                 "Set-Cookie",
-                cookie.getName() + "=" + cookie.getValue() + "; Path=/; HttpOnly; Max-Age=86400"
+                cookie.getName() + "=" + cookie.getValue() + "; Path=/; Max-Age=86400"
         );
 
         return newHeaders;
