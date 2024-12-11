@@ -75,6 +75,18 @@ public class MindMapService {
         }
     }
 
+    public List<MindMap> getAllMindMaps(User user) {
+        try {
+            return mindMapRepository.findByCreator(user);
+        } catch (NoSuchElementException e) {
+            logger.warn("Mind maps for user with ID {} not found", user.getId());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error retrieving mind maps for user with ID {}: {}", user.getId(), e.getMessage());
+            throw new RuntimeException("Failed to retrieve mind map", e);
+        }
+    }
+
     public FullMindMap getFullMindMap(User user, Long mindMapId) {
         try {
             MindMap mindMap = getMindMap(mindMapId);

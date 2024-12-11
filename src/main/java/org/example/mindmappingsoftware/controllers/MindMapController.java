@@ -74,6 +74,26 @@ public class MindMapController {
         }
     }
 
+    @GetMapping("/all")
+    public ResponseEntity<?> getAllMindMaps(
+            @CookieValue(value = "userId", required = false) String userId
+    ) {
+        try {
+            User user = validateUser(userId);
+
+            List<MindMap> mindMaps = mindMapService.getAllMindMaps(user);
+
+            return ResponseEntity.status(HttpStatus.OK).body(mindMaps);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Mind maps not found.");
+        } catch (Exception e) {
+            logger.error("Error fetching mind maps", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
+        }
+    }
+
     @GetMapping("/{mindMapId}")
     public ResponseEntity<?> getMindMap(
             @CookieValue(value = "userId", required = false) String userId,
