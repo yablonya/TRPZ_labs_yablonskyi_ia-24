@@ -6,9 +6,8 @@ import java.util.List;
 
 public class NodeCreationRequest {
     private String content;
-    private String iconInfo;
-    private String xPosition;
-    private String yPosition;
+    private double xPosition;
+    private double yPosition;
     private String mindMapId;
     private List<File> nodeFiles;
 
@@ -20,27 +19,19 @@ public class NodeCreationRequest {
         this.content = content;
     }
 
-    public String getIconInfo() {
-        return iconInfo;
-    }
-
-    public void setIconInfo(String iconInfo) {
-        this.iconInfo = iconInfo;
-    }
-
-    public String getXPosition() {
+    public double getxPosition() {
         return xPosition;
     }
 
-    public void setXPosition(String xPosition) {
+    public void setxPosition(double xPosition) {
         this.xPosition = xPosition;
     }
 
-    public String getYPosition() {
+    public double getyPosition() {
         return yPosition;
     }
 
-    public void setYPosition(String yPosition) {
+    public void setyPosition(double yPosition) {
         this.yPosition = yPosition;
     }
 
@@ -59,4 +50,5 @@ public class NodeCreationRequest {
     public void setNodeFiles(List<File> nodeFiles) {
         this.nodeFiles = nodeFiles;
     }
+
 }

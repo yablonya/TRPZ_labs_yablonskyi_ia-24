@@ -1,7 +1,6 @@
 package org.example.mindmappingsoftware.models;
 
 import jakarta.persistence.*;
-import org.example.mindmappingsoftware.models.icons.Icon;
 
 import java.util.Date;
 
@@ -14,12 +13,8 @@ public class Node {
     @JoinColumn(name = "mind_map_id")
     private MindMap mindMap;
     private String content;
-    private String xPosition;
-    private String yPosition;
-    private String iconType;
-    private String iconValue;
-    @Transient
-    private Icon icon;
+    private double xPosition;
+    private double yPosition;
     private final Date creationDate;
 
     public Node() {
@@ -50,46 +45,20 @@ public class Node {
         this.content = content;
     }
 
-    public String getXPosition() {
+    public double getXPosition() {
         return xPosition;
     }
 
-    public void setXPosition(String xPosition) {
+    public void setXPosition(double xPosition) {
         this.xPosition = xPosition;
     }
 
-    public String getYPosition() {
+    public double getYPosition() {
         return yPosition;
     }
 
-    public void setYPosition(String yPosition) {
+    public void setYPosition(double yPosition) {
         this.yPosition = yPosition;
-    }
-
-    public String getIconType() {
-        return iconType;
-    }
-
-    public void setIconType(String iconType) {
-        this.iconType = iconType;
-    }
-
-    public String getIconValue() {
-        return iconValue;
-    }
-
-    public void setIconValue(String iconValue) {
-        this.iconValue = iconValue;
-    }
-
-    public Icon getIcon() {
-        return icon;
-    }
-
-    public void setIcon(Icon icon) {
-        this.icon = icon;
-        this.iconType = icon.getType();
-        this.iconValue = icon.getInfo();
     }
 
     public Date getCreationDate() {

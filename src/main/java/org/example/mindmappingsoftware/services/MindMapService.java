@@ -3,8 +3,6 @@ package org.example.mindmappingsoftware.services;
 import org.example.mindmappingsoftware.dto.FullMindMap;
 import org.example.mindmappingsoftware.dto.NodeCreationRequest;
 import org.example.mindmappingsoftware.models.*;
-import org.example.mindmappingsoftware.models.icons.CategoryIcon;
-import org.example.mindmappingsoftware.models.icons.PriorityIcon;
 import org.example.mindmappingsoftware.repositories.*;
 import org.example.mindmappingsoftware.strategies.NodeProcessingStrategy;
 import org.example.mindmappingsoftware.strategies.WithFilesProcessingStrategy;
@@ -119,20 +117,12 @@ public class MindMapService {
             MindMap mindMap = getMindMap(Long.parseLong(node.getMindMapId()));
 
             Node newNode = new Node();
-
             newNode.setMindMap(mindMap);
             newNode.setContent(node.getContent());
-            newNode.setXPosition(node.getXPosition());
-            newNode.setYPosition(node.getYPosition());
-
-            if (isInteger(node.getIconInfo())) {
-                newNode.setIcon(new PriorityIcon(Integer.parseInt(node.getIconInfo())));
-            } else {
-                newNode.setIcon(new CategoryIcon(node.getIconInfo()));
-            }
+            newNode.setXPosition(node.getxPosition());
+            newNode.setYPosition(node.getyPosition());
 
             NodeProcessingStrategy strategy;
-
             if (node.getNodeFiles() != null) {
                 logger.info("Processing node with files for mind map {}", mindMap.getId());
                 strategy = new WithFilesProcessingStrategy(nodeRepository, fileRepository);
@@ -150,18 +140,6 @@ public class MindMapService {
         } catch (Exception e) {
             logger.error("Error adding node: {}", e.getMessage());
             throw new RuntimeException("Failed to add node", e);
-        }
-    }
-
-    public boolean isInteger(String str) {
-        if (str == null || str.isEmpty()) {
-            return false;
-        }
-        try {
-            Integer.parseInt(str);
-            return true;
-        } catch (NumberFormatException e) {
-            return false;
         }
     }
 }
