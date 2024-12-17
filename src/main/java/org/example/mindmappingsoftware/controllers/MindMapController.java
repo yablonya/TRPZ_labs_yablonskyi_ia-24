@@ -21,6 +21,7 @@ import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/mind-map")
+@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 public class MindMapController {
     private final MindMapService mindMapService;
     private final MindMapHistoryService mindMapHistoryService;
@@ -69,6 +70,26 @@ public class MindMapController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             logger.error("Error creating mind map", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
+        }
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<?> getAllMindMaps(
+            @CookieValue(value = "userId", required = false) String userId
+    ) {
+        try {
+            User user = validateUser(userId);
+
+            List<MindMap> mindMaps = mindMapService.getAllMindMaps(user);
+
+            return ResponseEntity.status(HttpStatus.OK).body(mindMaps);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Mind maps not found.");
+        } catch (Exception e) {
+            logger.error("Error fetching mind maps", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
         }
     }
