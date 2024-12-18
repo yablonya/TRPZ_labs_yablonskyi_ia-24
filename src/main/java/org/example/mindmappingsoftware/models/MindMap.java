@@ -13,7 +13,6 @@ public class MindMap {
     @JoinColumn(name = "creator_id")
     private User creator;
     private String name;
-    private String title;
     private final Date creationDate;
 
     public MindMap() {
@@ -42,14 +41,6 @@ public class MindMap {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
     }
 
     public Date getCreationDate() {

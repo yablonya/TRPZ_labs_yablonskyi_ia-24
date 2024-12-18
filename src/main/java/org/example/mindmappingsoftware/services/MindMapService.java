@@ -62,6 +62,67 @@ public class MindMapService {
         }
     }
 
+    public void updateMindMapName(User user, Long mindMapId, String newName) {
+        try {
+            if (newName == null || newName.isEmpty()) {
+                throw new IllegalArgumentException("New name cannot be null or empty.");
+            }
+
+            MindMap mindMap = getMindMap(mindMapId);
+
+            if (!user.getId().equals(mindMap.getCreator().getId())) {
+                logger.warn("User {} does not own mind map {}", user.getId(), mindMapId);
+                throw new IllegalArgumentException("Mind map does not belong to the user.");
+            }
+
+            mindMap.setName(newName);
+            mindMapRepository.save(mindMap);
+
+            logger.info("Mind map name updated successfully for mind map {} by user {}", mindMapId, user.getId());
+        } catch (NoSuchElementException e) {
+            logger.warn("Mind map with ID {} not found for user {}", mindMapId, user.getId());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error updating mind map name for mind map {} by user {}: {}", mindMapId, user.getId(), e.getMessage());
+            throw new RuntimeException("Failed to update mind map name", e);
+        }
+    }
+
+    public void updateNodes(User user, Long mindMapId, List<Node> updatedNodes) {
+        try {
+            MindMap mindMap = getMindMap(mindMapId);
+
+            if (!user.getId().equals(mindMap.getCreator().getId())) {
+                logger.warn("User {} does not own mind map {}", user.getId(), mindMapId);
+                throw new IllegalArgumentException("Mind map does not belong to the user.");
+            }
+
+            for (Node updatedNode : updatedNodes) {
+                Node node = nodeRepository.findById(updatedNode.getId())
+                        .orElseThrow(() -> new NoSuchElementException("Node not found: " + updatedNode.getId()));
+
+                if (!node.getMindMap().getId().equals(mindMapId)) {
+                    logger.warn("Node {} does not belong to mind map {}", node.getId(), mindMapId);
+                    throw new IllegalArgumentException("Node does not belong to the specified mind map.");
+                }
+
+                node.setContent(updatedNode.getContent());
+                node.setXPosition(updatedNode.getXPosition());
+                node.setYPosition(updatedNode.getYPosition());
+
+                nodeRepository.save(node);
+                logger.info("Node {} updated successfully in mind map {}", node.getId(), mindMapId);
+            }
+        } catch (NoSuchElementException e) {
+            logger.warn("Error updating updatedNodes for mind map {}: {}", mindMapId, e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error updating updatedNodes for mind map {}: {}", mindMapId, e.getMessage());
+            throw new RuntimeException("Failed to update updatedNodes", e);
+        }
+    }
+
+
     public MindMap getMindMap(Long mindMapId) {
         try {
             return mindMapRepository.findById(mindMapId)
@@ -72,6 +133,21 @@ public class MindMapService {
         } catch (Exception e) {
             logger.error("Error retrieving mind map with ID {}: {}", mindMapId, e.getMessage());
             throw new RuntimeException("Failed to retrieve mind map", e);
+        }
+    }
+
+    public List<Node> getNodesByMindMapId(User user, Long mindMapId) {
+        try {
+            MindMap mindMap = getMindMap(mindMapId);
+
+            if (!user.getId().equals(mindMap.getCreator().getId())) {
+                throw new IllegalArgumentException("Mind map does not belong to the user.");
+            }
+
+            return nodeRepository.findAllByMindMap(mindMap);
+        } catch (Exception e) {
+            logger.error("Error retrieving nodes for mind map {}: {}", mindMapId, e.getMessage());
+            throw new RuntimeException("Failed to retrieve nodes", e);
         }
     }
 
@@ -112,21 +188,22 @@ public class MindMapService {
         }
     }
 
-    public void addNode(NodeCreationRequest node) {
+    public void addNode(NodeCreationRequest nodeRequest) {
         try {
-            MindMap mindMap = getMindMap(Long.parseLong(node.getMindMapId()));
+            MindMap mindMap = getMindMap(Long.parseLong(nodeRequest.getMindMapId()));
 
             Node newNode = new Node();
             newNode.setMindMap(mindMap);
-            newNode.setContent(node.getContent());
-            newNode.setXPosition(node.getxPosition());
-            newNode.setYPosition(node.getyPosition());
+            newNode.setContent(nodeRequest.getContent());
+            newNode.setXPosition(nodeRequest.getxPosition());
+            newNode.setYPosition(nodeRequest.getyPosition());
 
             NodeProcessingStrategy strategy;
-            if (node.getNodeFiles() != null) {
+            if (nodeRequest.getNodeFiles() != null && !nodeRequest.getNodeFiles().isEmpty()) {
                 logger.info("Processing node with files for mind map {}", mindMap.getId());
                 strategy = new WithFilesProcessingStrategy(nodeRepository, fileRepository);
-                strategy.process(newNode, node.getNodeFiles());
+
+                strategy.process(newNode, nodeRequest.getNodeFiles());
             } else {
                 logger.info("Processing node without files for mind map {}", mindMap.getId());
                 strategy = new WithoutFilesProcessingStrategy(nodeRepository);
@@ -140,6 +217,27 @@ public class MindMapService {
         } catch (Exception e) {
             logger.error("Error adding node: {}", e.getMessage());
             throw new RuntimeException("Failed to add node", e);
+        }
+    }
+
+    public List<File> getFilesByNodeId(User user, Long nodeId) {
+        try {
+            Node node = nodeRepository.findById(nodeId)
+                    .orElseThrow(() -> new NoSuchElementException("Node not found: " + nodeId));
+
+            MindMap mindMap = node.getMindMap();
+
+            if (!user.getId().equals(mindMap.getCreator().getId())) {
+                throw new IllegalArgumentException("Node does not belong to a mind map owned by the user.");
+            }
+
+            return fileRepository.findAllByNode(node);
+        } catch (NoSuchElementException e) {
+            logger.warn("Error retrieving files for node {}: {}", nodeId, e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error retrieving files for node {}: {}", nodeId, e.getMessage());
+            throw new RuntimeException("Failed to retrieve files for the node", e);
         }
     }
 }

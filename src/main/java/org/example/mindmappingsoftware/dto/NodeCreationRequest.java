@@ -9,7 +9,7 @@ public class NodeCreationRequest {
     private double xPosition;
     private double yPosition;
     private String mindMapId;
-    private List<File> nodeFiles;
+    private List<NodeFile> nodeFiles;
 
     public String getContent() {
         return content;
@@ -43,11 +43,11 @@ public class NodeCreationRequest {
         this.mindMapId = mindMapId;
     }
 
-    public List<File> getNodeFiles() {
+    public List<NodeFile> getNodeFiles() {
         return nodeFiles;
     }
 
-    public void setNodeFiles(List<File> nodeFiles) {
+    public void setNodeFiles(List<NodeFile> nodeFiles) {
         this.nodeFiles = nodeFiles;
     }
 

@@ -2,7 +2,9 @@ package org.example.mindmappingsoftware.controllers;
 
 import org.example.mindmappingsoftware.dto.FullMindMap;
 import org.example.mindmappingsoftware.dto.NodeCreationRequest;
+import org.example.mindmappingsoftware.models.File;
 import org.example.mindmappingsoftware.models.MindMap;
+import org.example.mindmappingsoftware.models.Node;
 import org.example.mindmappingsoftware.models.User;
 import org.example.mindmappingsoftware.services.MindMapHistoryService;
 import org.example.mindmappingsoftware.services.MindMapService;
@@ -199,7 +201,83 @@ public class MindMapController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching history");
         }
     }
+
+    @PutMapping("/{mindMapId}/update-name")
+    public ResponseEntity<?> updateMindMapName(
+            @CookieValue(value = "userId", required = false) String userId,
+            @PathVariable Long mindMapId,
+            @RequestParam String newName
+    ) {
+        try {
+            User user = validateUser(userId);
+            mindMapService.updateMindMapName(user, mindMapId, newName);
+
+            return ResponseEntity.status(HttpStatus.OK).body("Mind map name updated successfully.");
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Error updating mind map name", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
+        }
+    }
+
+    @PutMapping("/{mindMapId}/update-nodes")
+    public ResponseEntity<?> updateNodes(
+            @CookieValue(value = "userId", required = false) String userId,
+            @PathVariable Long mindMapId,
+            @RequestBody List<Node> nodes
+    ) {
+        try {
+            User user = validateUser(userId);
+            mindMapService.updateNodes(user, mindMapId, nodes);
+
+            return ResponseEntity.status(HttpStatus.OK).body("Nodes updated successfully.");
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (IllegalArgumentException | NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Error updating nodes", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
+        }
+    }
+
+    @GetMapping("/{mindMapId}/nodes")
+    public ResponseEntity<?> getNodes(
+            @CookieValue(value = "userId", required = false) String userId,
+            @PathVariable Long mindMapId
+    ) {
+        try {
+            User user = validateUser(userId);
+            List<Node> nodes = mindMapService.getNodesByMindMapId(user, mindMapId);
+            return ResponseEntity.ok(nodes);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Error fetching nodes for mind map {}: {}", mindMapId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
+        }
+    }
+
+    @GetMapping("/node/{nodeId}/files")
+    public ResponseEntity<?> getNodeFiles(
+            @CookieValue(value = "userId", required = false) String userId,
+            @PathVariable Long nodeId
+    ) {
+        try {
+            User user = validateUser(userId);
+            List<File> files = mindMapService.getFilesByNodeId(user, nodeId);
+            return ResponseEntity.ok(files);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Error retrieving files for node {}: {}", nodeId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
+        }
+    }
 }
-
-
 

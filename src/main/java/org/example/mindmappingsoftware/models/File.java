@@ -11,7 +11,7 @@ public class File {
     @ManyToOne
     @JoinColumn(name = "node_id")
     private Node node;
-    private String filePath;
+    private String url;
     private String type;
 
     public Long getId() {
@@ -30,12 +30,12 @@ public class File {
         this.node = node;
     }
 
-    public String getFilePath() {
-        return filePath;
+    public String getUrl() {
+        return url;
     }
 
-    public void setFilePath(String filePath) {
-        this.filePath = filePath;
+    public void setUrl(String filePath) {
+        this.url = filePath;
     }
 
     public String getType() {

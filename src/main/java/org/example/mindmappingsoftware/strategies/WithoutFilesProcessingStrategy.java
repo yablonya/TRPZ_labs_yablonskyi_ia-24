@@ -1,7 +1,7 @@
 package org.example.mindmappingsoftware.strategies;
 
-import org.example.mindmappingsoftware.models.File;
 import org.example.mindmappingsoftware.models.Node;
+import org.example.mindmappingsoftware.dto.NodeFile;
 import org.example.mindmappingsoftware.repositories.NodeRepository;
 
 import java.util.List;
@@ -19,6 +19,6 @@ public class WithoutFilesProcessingStrategy implements NodeProcessingStrategy {
     }
 
     @Override
-    public void process(Node node, List<File> nodeFiles) {}
+    public void process(Node node, List<NodeFile> nodeFiles) {}
 }
 
