@@ -11,6 +11,7 @@ public class Icon {
     @JoinColumn(name = "node_id")
     private Node node;
     private String type;
+    private String content;
 
     public Long getId() {
         return id;
@@ -34,5 +35,13 @@ public class Icon {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
     }
 }

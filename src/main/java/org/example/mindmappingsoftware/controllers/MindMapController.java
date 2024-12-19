@@ -2,10 +2,9 @@ package org.example.mindmappingsoftware.controllers;
 
 import org.example.mindmappingsoftware.dto.FullMindMap;
 import org.example.mindmappingsoftware.dto.NodeCreationRequest;
-import org.example.mindmappingsoftware.models.File;
-import org.example.mindmappingsoftware.models.MindMap;
-import org.example.mindmappingsoftware.models.Node;
-import org.example.mindmappingsoftware.models.User;
+import org.example.mindmappingsoftware.dto.NodeFile;
+import org.example.mindmappingsoftware.dto.NodeIcon;
+import org.example.mindmappingsoftware.models.*;
 import org.example.mindmappingsoftware.services.MindMapHistoryService;
 import org.example.mindmappingsoftware.services.MindMapService;
 import org.example.mindmappingsoftware.services.UserService;
@@ -277,6 +276,89 @@ public class MindMapController {
         } catch (Exception e) {
             logger.error("Error retrieving files for node {}: {}", nodeId, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
+        }
+    }
+
+    @GetMapping("/node/{nodeId}/icons")
+    public ResponseEntity<?> getNodeIcons(
+            @CookieValue(value = "userId", required = false) String userId,
+            @PathVariable Long nodeId
+    ) {
+        try {
+            User user = validateUser(userId);
+            List<Icon> icons = mindMapService.getIconsByNodeId(user, nodeId);
+            return ResponseEntity.ok(icons);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Error retrieving icons for node {}: {}", nodeId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
+        }
+    }
+
+    @PostMapping("/node/{nodeId}/remove-icon")
+    public ResponseEntity<?> removeIcon(
+            @CookieValue(value = "userId", required = false) String userId,
+            @PathVariable Long nodeId,
+            @RequestParam Long iconId
+    ) {
+        try {
+            User user = validateUser(userId);
+            mindMapService.removeIcon(user, nodeId, iconId);
+            return ResponseEntity.ok("Icon removed successfully.");
+        } catch (Exception e) {
+            logger.error("Error removing icon for node {}: {}", nodeId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to remove icon.");
+        }
+    }
+
+    @PostMapping("/node/{nodeId}/remove-file")
+    public ResponseEntity<?> removeFile(
+            @CookieValue(value = "userId", required = false) String userId,
+            @PathVariable Long nodeId,
+            @RequestParam Long fileId
+    ) {
+        try {
+            User user = validateUser(userId);
+            mindMapService.removeFile(user, nodeId, fileId);
+            return ResponseEntity.ok("File removed successfully.");
+        } catch (Exception e) {
+            logger.error("Error removing file for node {}: {}", nodeId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to remove file.");
+        }
+    }
+
+    @PostMapping("/node/{nodeId}/add-icon")
+    public ResponseEntity<?> addIcon(
+            @CookieValue(value = "userId", required = false) String userId,
+            @PathVariable Long nodeId,
+            @RequestBody NodeIcon icon
+    ) {
+        try {
+            User user = validateUser(userId);
+            mindMapService.addIcon(user, nodeId, icon);
+            return ResponseEntity.ok("Icon added successfully.");
+        } catch (Exception e) {
+            logger.error("Error adding icon for node {}: {}", nodeId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to add icon.");
+        }
+    }
+
+    @PostMapping("/node/{nodeId}/add-file")
+    public ResponseEntity<?> addNodeFile(
+            @CookieValue(value = "userId", required = false) String userId,
+            @PathVariable Long nodeId,
+            @RequestBody NodeFile newFile
+    ) {
+        try {
+            User user = validateUser(userId);
+            mindMapService.addNodeFile(user, nodeId, newFile);
+            return ResponseEntity.ok("File added successfully.");
+        } catch (Exception e) {
+            logger.error("Error adding file for node {}: {}", nodeId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to add file.");
         }
     }
 }

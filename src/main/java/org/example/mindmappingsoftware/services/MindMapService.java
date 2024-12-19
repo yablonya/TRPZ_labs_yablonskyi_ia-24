@@ -2,16 +2,16 @@ package org.example.mindmappingsoftware.services;
 
 import org.example.mindmappingsoftware.dto.FullMindMap;
 import org.example.mindmappingsoftware.dto.NodeCreationRequest;
+import org.example.mindmappingsoftware.dto.NodeFile;
+import org.example.mindmappingsoftware.dto.NodeIcon;
 import org.example.mindmappingsoftware.models.*;
 import org.example.mindmappingsoftware.repositories.*;
-import org.example.mindmappingsoftware.strategies.NodeProcessingStrategy;
-import org.example.mindmappingsoftware.strategies.WithFilesProcessingStrategy;
-import org.example.mindmappingsoftware.strategies.WithoutFilesProcessingStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
@@ -88,41 +88,6 @@ public class MindMapService {
         }
     }
 
-    public void updateNodes(User user, Long mindMapId, List<Node> updatedNodes) {
-        try {
-            MindMap mindMap = getMindMap(mindMapId);
-
-            if (!user.getId().equals(mindMap.getCreator().getId())) {
-                logger.warn("User {} does not own mind map {}", user.getId(), mindMapId);
-                throw new IllegalArgumentException("Mind map does not belong to the user.");
-            }
-
-            for (Node updatedNode : updatedNodes) {
-                Node node = nodeRepository.findById(updatedNode.getId())
-                        .orElseThrow(() -> new NoSuchElementException("Node not found: " + updatedNode.getId()));
-
-                if (!node.getMindMap().getId().equals(mindMapId)) {
-                    logger.warn("Node {} does not belong to mind map {}", node.getId(), mindMapId);
-                    throw new IllegalArgumentException("Node does not belong to the specified mind map.");
-                }
-
-                node.setContent(updatedNode.getContent());
-                node.setXPosition(updatedNode.getXPosition());
-                node.setYPosition(updatedNode.getYPosition());
-
-                nodeRepository.save(node);
-                logger.info("Node {} updated successfully in mind map {}", node.getId(), mindMapId);
-            }
-        } catch (NoSuchElementException e) {
-            logger.warn("Error updating updatedNodes for mind map {}: {}", mindMapId, e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            logger.error("Error updating updatedNodes for mind map {}: {}", mindMapId, e.getMessage());
-            throw new RuntimeException("Failed to update updatedNodes", e);
-        }
-    }
-
-
     public MindMap getMindMap(Long mindMapId) {
         try {
             return mindMapRepository.findById(mindMapId)
@@ -198,16 +163,34 @@ public class MindMapService {
             newNode.setXPosition(nodeRequest.getxPosition());
             newNode.setYPosition(nodeRequest.getyPosition());
 
-            NodeProcessingStrategy strategy;
-            if (nodeRequest.getNodeFiles() != null && !nodeRequest.getNodeFiles().isEmpty()) {
-                logger.info("Processing node with files for mind map {}", mindMap.getId());
-                strategy = new WithFilesProcessingStrategy(nodeRepository, fileRepository);
+            nodeRepository.save(newNode);
 
-                strategy.process(newNode, nodeRequest.getNodeFiles());
-            } else {
-                logger.info("Processing node without files for mind map {}", mindMap.getId());
-                strategy = new WithoutFilesProcessingStrategy(nodeRepository);
-                strategy.process(newNode);
+            if (nodeRequest.getNodeIcons() != null && !nodeRequest.getNodeIcons().isEmpty()) {
+                List<Icon> iconEntities = new ArrayList<>();
+
+                for (NodeIcon nodeIcon : nodeRequest.getNodeIcons()) {
+                    Icon icon = new Icon();
+                    icon.setType(nodeIcon.getType());
+                    icon.setContent(nodeIcon.getContent());
+                    icon.setNode(newNode);
+                    iconEntities.add(icon);
+                }
+
+                iconRepository.saveAll(iconEntities);
+            }
+
+            if (nodeRequest.getNodeFiles() != null && !nodeRequest.getNodeFiles().isEmpty()) {
+                List<File> fileEntities = new ArrayList<>();
+
+                for (NodeFile nodeFile : nodeRequest.getNodeFiles()) {
+                    File file = new File();
+                    file.setUrl(nodeFile.getUrl());
+                    file.setType(nodeFile.getType());
+                    file.setNode(newNode);
+                    fileEntities.add(file);
+                }
+
+                fileRepository.saveAll(fileEntities);
             }
 
             logger.info("Node added successfully to mind map {}", mindMap.getId());
@@ -217,6 +200,40 @@ public class MindMapService {
         } catch (Exception e) {
             logger.error("Error adding node: {}", e.getMessage());
             throw new RuntimeException("Failed to add node", e);
+        }
+    }
+
+    public void updateNodes(User user, Long mindMapId, List<Node> updatedNodes) {
+        try {
+            MindMap mindMap = getMindMap(mindMapId);
+
+            if (!user.getId().equals(mindMap.getCreator().getId())) {
+                logger.warn("User {} does not own mind map {}", user.getId(), mindMapId);
+                throw new IllegalArgumentException("Mind map does not belong to the user.");
+            }
+
+            for (Node updatedNode : updatedNodes) {
+                Node node = nodeRepository.findById(updatedNode.getId())
+                        .orElseThrow(() -> new NoSuchElementException("Node not found: " + updatedNode.getId()));
+
+                if (!node.getMindMap().getId().equals(mindMapId)) {
+                    logger.warn("Node {} does not belong to mind map {}", node.getId(), mindMapId);
+                    throw new IllegalArgumentException("Node does not belong to the specified mind map.");
+                }
+
+                node.setContent(updatedNode.getContent());
+                node.setXPosition(updatedNode.getXPosition());
+                node.setYPosition(updatedNode.getYPosition());
+
+                nodeRepository.save(node);
+                logger.info("Node {} updated successfully in mind map {}", node.getId(), mindMapId);
+            }
+        } catch (NoSuchElementException e) {
+            logger.warn("Error updating updatedNodes for mind map {}: {}", mindMapId, e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error updating updatedNodes for mind map {}: {}", mindMapId, e.getMessage());
+            throw new RuntimeException("Failed to update updatedNodes", e);
         }
     }
 
@@ -240,6 +257,102 @@ public class MindMapService {
             throw new RuntimeException("Failed to retrieve files for the node", e);
         }
     }
+
+    public List<Icon> getIconsByNodeId(User user, Long nodeId) {
+        try {
+            Node node = nodeRepository.findById(nodeId)
+                    .orElseThrow(() -> new NoSuchElementException("Node not found: " + nodeId));
+
+            MindMap mindMap = node.getMindMap();
+
+            if (!user.getId().equals(mindMap.getCreator().getId())) {
+                throw new IllegalArgumentException("Node does not belong to a mind map owned by the user.");
+            }
+
+            return iconRepository.findAllByNode(node);
+        } catch (NoSuchElementException e) {
+            logger.warn("Error retrieving icons for node {}: {}", nodeId, e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error retrieving icons for node {}: {}", nodeId, e.getMessage());
+            throw new RuntimeException("Failed to retrieve icons for the node", e);
+        }
+    }
+
+    public void removeIcon(User user, Long nodeId, Long iconId) {
+        Node node = nodeRepository.findById(nodeId)
+                .orElseThrow(() -> new NoSuchElementException("Node not found: " + nodeId));
+        MindMap mindMap = node.getMindMap();
+
+        if (!user.getId().equals(mindMap.getCreator().getId())) {
+            throw new IllegalArgumentException("Node does not belong to a mind map owned by the user.");
+        }
+
+        Icon icon = iconRepository.findById(iconId)
+                .orElseThrow(() -> new NoSuchElementException("Icon not found: " + iconId));
+
+        if (!icon.getNode().getId().equals(nodeId)) {
+            throw new IllegalArgumentException("Icon does not belong to the specified node.");
+        }
+
+        iconRepository.delete(icon);
+        logger.info("Icon {} removed from node {} by user {}", iconId, nodeId, user.getId());
+    }
+
+    public void removeFile(User user, Long nodeId, Long fileId) {
+        Node node = nodeRepository.findById(nodeId)
+                .orElseThrow(() -> new NoSuchElementException("Node not found: " + nodeId));
+        MindMap mindMap = node.getMindMap();
+
+        if (!user.getId().equals(mindMap.getCreator().getId())) {
+            throw new IllegalArgumentException("Node does not belong to a mind map owned by the user.");
+        }
+
+        File file = fileRepository.findById(fileId)
+                .orElseThrow(() -> new NoSuchElementException("File not found: " + fileId));
+
+        if (!file.getNode().getId().equals(nodeId)) {
+            throw new IllegalArgumentException("File does not belong to the specified node.");
+        }
+
+        fileRepository.delete(file);
+        logger.info("File {} removed from node {} by user {}", fileId, nodeId, user.getId());
+    }
+
+    public void addIcon(User user, Long nodeId, NodeIcon icon) {
+        Node node = nodeRepository.findById(nodeId)
+                .orElseThrow(() -> new NoSuchElementException("Node not found: " + nodeId));
+        MindMap mindMap = node.getMindMap();
+
+        if (!user.getId().equals(mindMap.getCreator().getId())) {
+            throw new IllegalArgumentException("Node does not belong to a mind map owned by the user.");
+        }
+
+        Icon newIcon = new Icon();
+        newIcon.setType(icon.getType());
+        newIcon.setContent(icon.getContent());
+        newIcon.setNode(node);
+
+        iconRepository.save(newIcon);
+        logger.info("Icon added to node {} by user {}", nodeId, user.getId());
+    }
+
+    public void addNodeFile(User user, Long nodeId, NodeFile file) {
+        Node node = nodeRepository.findById(nodeId)
+                .orElseThrow(() -> new NoSuchElementException("Node not found: " + nodeId));
+        MindMap mindMap = node.getMindMap();
+
+        if (!user.getId().equals(mindMap.getCreator().getId())) {
+            throw new IllegalArgumentException("Node does not belong to a mind map owned by the user.");
+        }
+
+        File newFile = new File();
+        newFile.setUrl(file.getUrl());
+        newFile.setType(file.getType());
+        newFile.setNode(node);
+
+        newFile.setNode(node);
+        fileRepository.save(newFile);
+        logger.info("File added to node {} by user {}", nodeId, user.getId());
+    }
 }
-
-

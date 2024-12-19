@@ -9,5 +9,5 @@ import java.util.List;
 
 @Repository
 public interface IconRepository extends JpaRepository<Icon, Long> {
-    List<Icon> findByNode(Node node);
+    List<Icon> findAllByNode(Node node);
 }

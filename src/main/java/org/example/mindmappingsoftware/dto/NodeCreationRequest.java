@@ -1,7 +1,5 @@
 package org.example.mindmappingsoftware.dto;
 
-import org.example.mindmappingsoftware.models.File;
-
 import java.util.List;
 
 public class NodeCreationRequest {
@@ -9,6 +7,7 @@ public class NodeCreationRequest {
     private double xPosition;
     private double yPosition;
     private String mindMapId;
+    private List<NodeIcon> nodeIcons;
     private List<NodeFile> nodeFiles;
 
     public String getContent() {
@@ -41,6 +40,14 @@ public class NodeCreationRequest {
 
     public void setMindMapId(String mindMapId) {
         this.mindMapId = mindMapId;
+    }
+
+    public List<NodeIcon> getNodeIcons() {
+        return nodeIcons;
+    }
+
+    public void setNodeIcons(List<NodeIcon> nodeIcons) {
+        this.nodeIcons = nodeIcons;
     }
 
     public List<NodeFile> getNodeFiles() {

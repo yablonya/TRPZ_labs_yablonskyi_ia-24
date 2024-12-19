@@ -10,4 +10,5 @@ import java.util.List;
 @Repository
 public interface FileRepository extends JpaRepository<File, Long> {
     List<File> findAllByNode(Node node);
+    void deleteByNode(Node node);
 }
