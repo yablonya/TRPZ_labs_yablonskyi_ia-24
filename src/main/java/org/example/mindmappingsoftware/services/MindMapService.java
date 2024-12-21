@@ -12,8 +12,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 @Service
 public class MindMapService {
@@ -22,7 +24,6 @@ public class MindMapService {
     private final ConnectionRepository connectionRepository;
     private final IconRepository iconRepository;
     private final FileRepository fileRepository;
-    private final CommentRepository commentRepository;
     private static final Logger logger = LoggerFactory.getLogger(MindMapService.class);
 
     @Autowired
@@ -31,15 +32,13 @@ public class MindMapService {
             NodeRepository nodeRepository,
             ConnectionRepository connectionRepository,
             IconRepository iconRepository,
-            FileRepository fileRepository,
-            CommentRepository commentRepository
+            FileRepository fileRepository
     ) {
         this.mindMapRepository = mindMapRepository;
         this.nodeRepository = nodeRepository;
         this.connectionRepository = connectionRepository;
         this.iconRepository = iconRepository;
         this.fileRepository = fileRepository;
-        this.commentRepository = commentRepository;
     }
 
     public MindMap createMindMap(User user, String mapName) {
@@ -165,6 +164,24 @@ public class MindMapService {
 
             nodeRepository.save(newNode);
 
+            List<Node> existingNodes = nodeRepository.findAllByMindMap(mindMap)
+                    .stream()
+                    .filter(node -> !node.getId().equals(newNode.getId()))
+                    .toList();
+
+            if (!existingNodes.isEmpty()) {
+                Node nearestNode = existingNodes.stream()
+                        .min(Comparator.comparingDouble(node -> Math.sqrt(
+                                Math.pow(node.getXPosition() - newNode.getXPosition(), 2) +
+                                        Math.pow(node.getYPosition() - newNode.getYPosition(), 2))))
+                        .orElse(null);
+
+                Connection connection = new Connection();
+                connection.setFromNode(newNode);
+                connection.setToNode(nearestNode);
+                connectionRepository.save(connection);
+            }
+
             if (nodeRequest.getNodeIcons() != null && !nodeRequest.getNodeIcons().isEmpty()) {
                 List<Icon> iconEntities = new ArrayList<>();
 
@@ -234,6 +251,32 @@ public class MindMapService {
         } catch (Exception e) {
             logger.error("Error updating updatedNodes for mind map {}: {}", mindMapId, e.getMessage());
             throw new RuntimeException("Failed to update updatedNodes", e);
+        }
+    }
+
+    public List<Connection> getConnectionsByMindMapId(User user, Long mindMapId) {
+        try {
+            MindMap mindMap = getMindMap(mindMapId);
+
+            if (!user.getId().equals(mindMap.getCreator().getId())) {
+                throw new IllegalArgumentException("Mind map does not belong to the user.");
+            }
+
+            List<Node> nodes = nodeRepository.findAllByMindMap(mindMap);
+
+            if (nodes.isEmpty()) {
+                return new ArrayList<>();
+            }
+
+            return connectionRepository.findAll().stream()
+                    .filter(connection -> nodes.contains(connection.getFromNode()) || nodes.contains(connection.getToNode()))
+                    .collect(Collectors.toList());
+        } catch (NoSuchElementException e) {
+            logger.warn("Mind map with ID {} not found", mindMapId);
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error retrieving connections for mind map {}: {}", mindMapId, e.getMessage());
+            throw new RuntimeException("Failed to retrieve connections", e);
         }
     }
 
@@ -354,5 +397,72 @@ public class MindMapService {
         newFile.setNode(node);
         fileRepository.save(newFile);
         logger.info("File added to node {} by user {}", nodeId, user.getId());
+    }
+
+    public void deleteNode(Long nodeId) {
+        try {
+            Node node = nodeRepository.findById(nodeId)
+                    .orElseThrow(() -> new NoSuchElementException("Node not found: " + nodeId));
+
+            connectionRepository.deleteAll(connectionRepository.findByFromNodeOrToNode(node, node));
+
+            iconRepository.deleteAll(iconRepository.findAllByNode(node));
+            fileRepository.deleteAll(fileRepository.findAllByNode(node));
+
+            // Видалення самого вузла
+            nodeRepository.delete(node);
+            logger.info("Node {} deleted successfully", nodeId);
+        } catch (NoSuchElementException e) {
+            logger.warn("Error deleting node {}: {}", nodeId, e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error deleting node {}: {}", nodeId, e.getMessage());
+            throw new RuntimeException("Failed to delete node", e);
+        }
+    }
+
+    public void addConnection(Long fromNodeId, Long toNodeId) {
+        try {
+            Node fromNode = nodeRepository.findById(fromNodeId)
+                    .orElseThrow(() -> new NoSuchElementException("From Node not found: " + fromNodeId));
+            Node toNode = nodeRepository.findById(toNodeId)
+                    .orElseThrow(() -> new NoSuchElementException("To Node not found: " + toNodeId));
+
+            if (connectionRepository.existsByFromNodeAndToNode(fromNode, toNode)) {
+                throw new IllegalArgumentException("Connection already exists between the specified nodes.");
+            }
+
+            Connection connection = new Connection();
+            connection.setFromNode(fromNode);
+            connection.setToNode(toNode);
+            connectionRepository.save(connection);
+
+            logger.info("Connection added successfully between nodes {} and {}", fromNodeId, toNodeId);
+        } catch (NoSuchElementException e) {
+            logger.warn("Error adding connection: {}", e.getMessage());
+            throw e;
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid connection request: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error adding connection between nodes {} and {}: {}", fromNodeId, toNodeId, e.getMessage());
+            throw new RuntimeException("Failed to add connection", e);
+        }
+    }
+
+    public void deleteConnection(Long connectionId) {
+        try {
+            Connection connection = connectionRepository.findById(connectionId)
+                    .orElseThrow(() -> new NoSuchElementException("Connection not found: " + connectionId));
+
+            connectionRepository.delete(connection);
+            logger.info("Connection {} deleted successfully", connectionId);
+        } catch (NoSuchElementException e) {
+            logger.warn("Error deleting connection {}: {}", connectionId, e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error deleting connection {}: {}", connectionId, e.getMessage());
+            throw new RuntimeException("Failed to delete connection", e);
+        }
     }
 }

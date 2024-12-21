@@ -9,14 +9,12 @@ public class Connection {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "from_node_id")
     private Node fromNode;
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "to_node_id")
     private Node toNode;
-    private String style;
-    private String category;
     private final Date creationDate;
 
     public Connection() {
@@ -45,22 +43,6 @@ public class Connection {
 
     public void setToNode(Node toNode) {
         this.toNode = toNode;
-    }
-
-    public String getStyle() {
-        return style;
-    }
-
-    public void setStyle(String style) {
-        this.style = style;
-    }
-
-    public String getCategory() {
-        return category;
-    }
-
-    public void setCategory(String category) {
-        this.category = category;
     }
 
     public Date getCreationDate() {

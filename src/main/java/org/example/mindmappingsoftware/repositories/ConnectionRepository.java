@@ -9,6 +9,6 @@ import java.util.List;
 
 @Repository
 public interface ConnectionRepository extends JpaRepository<Connection, Long> {
-    List<Connection> findByFromNode(Node node);
-    List<Connection> findByToNode(Node node);
+    List<Connection> findByFromNodeOrToNode(Node fromNode, Node toNode);
+    boolean existsByFromNodeAndToNode(Node fromNode, Node toNode);
 }

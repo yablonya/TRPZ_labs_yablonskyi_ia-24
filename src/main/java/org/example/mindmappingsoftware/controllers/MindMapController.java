@@ -260,6 +260,25 @@ public class MindMapController {
         }
     }
 
+    @GetMapping("/{mindMapId}/connections")
+    public ResponseEntity<?> getConnectionsByMindMapId(
+            @CookieValue(value = "userId", required = false) String userId,
+            @PathVariable Long mindMapId
+    ) {
+        try {
+            User user = validateUser(userId);
+            List<Connection> connections = mindMapService.getConnectionsByMindMapId(user, mindMapId);
+            return ResponseEntity.ok(connections);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Mind map or connections not found.");
+        } catch (Exception e) {
+            logger.error("Error fetching connections for mind map {}: {}", mindMapId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
+        }
+    }
+
     @GetMapping("/node/{nodeId}/files")
     public ResponseEntity<?> getNodeFiles(
             @CookieValue(value = "userId", required = false) String userId,
@@ -359,6 +378,66 @@ public class MindMapController {
         } catch (Exception e) {
             logger.error("Error adding file for node {}: {}", nodeId, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to add file.");
+        }
+    }
+
+    @PostMapping("/node/{nodeId}")
+    public ResponseEntity<?> deleteNode(
+            @CookieValue(value = "userId", required = false) String userId,
+            @PathVariable Long nodeId
+    ) {
+        try {
+            validateUser(userId);
+            mindMapService.deleteNode(nodeId);
+            return ResponseEntity.ok("Node deleted successfully.");
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Node not found.");
+        } catch (Exception e) {
+            logger.error("Error deleting node {}: {}", nodeId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to delete node.");
+        }
+    }
+
+    @PostMapping("/add-connection")
+    public ResponseEntity<?> addConnection(
+            @CookieValue(value = "userId", required = false) String userId,
+            @RequestParam Long fromNodeId,
+            @RequestParam Long toNodeId
+    ) {
+        try {
+            validateUser(userId);
+            mindMapService.addConnection(fromNodeId, toNodeId);
+            return ResponseEntity.ok("Connection added successfully.");
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Nodes not found.");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Error adding connection between nodes {} and {}: {}", fromNodeId, toNodeId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to add connection.");
+        }
+    }
+
+    @PostMapping("/connection/{connectionId}")
+    public ResponseEntity<?> deleteConnection(
+            @CookieValue(value = "userId", required = false) String userId,
+            @PathVariable Long connectionId
+    ) {
+        try {
+            validateUser(userId);
+            mindMapService.deleteConnection(connectionId);
+            return ResponseEntity.ok("Connection deleted successfully.");
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Connection not found.");
+        } catch (Exception e) {
+            logger.error("Error deleting connection {}: {}", connectionId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to delete connection.");
         }
     }
 }
