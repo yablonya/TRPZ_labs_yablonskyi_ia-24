@@ -116,27 +116,6 @@ public class MindMapController {
         }
     }
 
-    @PostMapping("/add-node")
-    public ResponseEntity<?> addNode(
-            @CookieValue(value = "userId", required = false) String userId,
-            @RequestBody NodeCreationRequest node
-    ) {
-        try {
-            validateUser(userId);
-
-            mindMapService.addNode(node);
-
-            return ResponseEntity.status(HttpStatus.OK).body("Node added successfully.");
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
-        } catch (NoSuchElementException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Mind map or related resource not found.");
-        } catch (Exception e) {
-            logger.error("Error adding node", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
-        }
-    }
-
     @PostMapping("/{id}/save")
     public ResponseEntity<?> saveMindMapState(
             @CookieValue(value = "userId", required = false) String userId,
@@ -153,6 +132,25 @@ public class MindMapController {
         } catch (Exception e) {
             logger.error("Error saving mind map state", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error saving state");
+        }
+    }
+
+    @GetMapping("/{id}/history")
+    public ResponseEntity<?> getMindMapHistory(
+            @CookieValue(value = "userId", required = false) String userId,
+            @PathVariable Long id
+    ) {
+        try {
+            validateUser(userId);
+
+            List<FullMindMap> history = mindMapHistoryService.getMindMapHistory(id);
+
+            return ResponseEntity.ok(history);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not logged in.");
+        } catch (Exception e) {
+            logger.error("Error fetching mind map history", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching history");
         }
     }
 
@@ -182,25 +180,6 @@ public class MindMapController {
         }
     }
 
-    @GetMapping("/{id}/history")
-    public ResponseEntity<?> getMindMapHistory(
-            @CookieValue(value = "userId", required = false) String userId,
-            @PathVariable Long id
-    ) {
-        try {
-            validateUser(userId);
-
-            List<FullMindMap> history = mindMapHistoryService.getMindMapHistory(id);
-
-            return ResponseEntity.ok(history);
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not logged in.");
-        } catch (Exception e) {
-            logger.error("Error fetching mind map history", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching history");
-        }
-    }
-
     @PutMapping("/{mindMapId}/update-name")
     public ResponseEntity<?> updateMindMapName(
             @CookieValue(value = "userId", required = false) String userId,
@@ -218,6 +197,23 @@ public class MindMapController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             logger.error("Error updating mind map name", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
+        }
+    }
+
+    @GetMapping("/{mindMapId}/nodes")
+    public ResponseEntity<?> getNodes(
+            @CookieValue(value = "userId", required = false) String userId,
+            @PathVariable Long mindMapId
+    ) {
+        try {
+            User user = validateUser(userId);
+            List<Node> nodes = mindMapService.getNodesByMindMapId(user, mindMapId);
+            return ResponseEntity.ok(nodes);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Error fetching nodes for mind map {}: {}", mindMapId, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
         }
     }
@@ -243,163 +239,6 @@ public class MindMapController {
         }
     }
 
-    @GetMapping("/{mindMapId}/nodes")
-    public ResponseEntity<?> getNodes(
-            @CookieValue(value = "userId", required = false) String userId,
-            @PathVariable Long mindMapId
-    ) {
-        try {
-            User user = validateUser(userId);
-            List<Node> nodes = mindMapService.getNodesByMindMapId(user, mindMapId);
-            return ResponseEntity.ok(nodes);
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
-        } catch (Exception e) {
-            logger.error("Error fetching nodes for mind map {}: {}", mindMapId, e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
-        }
-    }
-
-    @GetMapping("/{mindMapId}/connections")
-    public ResponseEntity<?> getConnectionsByMindMapId(
-            @CookieValue(value = "userId", required = false) String userId,
-            @PathVariable Long mindMapId
-    ) {
-        try {
-            User user = validateUser(userId);
-            List<Connection> connections = mindMapService.getConnectionsByMindMapId(user, mindMapId);
-            return ResponseEntity.ok(connections);
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
-        } catch (NoSuchElementException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Mind map or connections not found.");
-        } catch (Exception e) {
-            logger.error("Error fetching connections for mind map {}: {}", mindMapId, e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
-        }
-    }
-
-    @GetMapping("/node/{nodeId}/files")
-    public ResponseEntity<?> getNodeFiles(
-            @CookieValue(value = "userId", required = false) String userId,
-            @PathVariable Long nodeId
-    ) {
-        try {
-            User user = validateUser(userId);
-            List<File> files = mindMapService.getFilesByNodeId(user, nodeId);
-            return ResponseEntity.ok(files);
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
-        } catch (NoSuchElementException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            logger.error("Error retrieving files for node {}: {}", nodeId, e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
-        }
-    }
-
-    @GetMapping("/node/{nodeId}/icons")
-    public ResponseEntity<?> getNodeIcons(
-            @CookieValue(value = "userId", required = false) String userId,
-            @PathVariable Long nodeId
-    ) {
-        try {
-            User user = validateUser(userId);
-            List<Icon> icons = mindMapService.getIconsByNodeId(user, nodeId);
-            return ResponseEntity.ok(icons);
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
-        } catch (NoSuchElementException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (Exception e) {
-            logger.error("Error retrieving icons for node {}: {}", nodeId, e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
-        }
-    }
-
-    @PostMapping("/node/{nodeId}/remove-icon")
-    public ResponseEntity<?> removeIcon(
-            @CookieValue(value = "userId", required = false) String userId,
-            @PathVariable Long nodeId,
-            @RequestParam Long iconId
-    ) {
-        try {
-            User user = validateUser(userId);
-            mindMapService.removeIcon(user, nodeId, iconId);
-            return ResponseEntity.ok("Icon removed successfully.");
-        } catch (Exception e) {
-            logger.error("Error removing icon for node {}: {}", nodeId, e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to remove icon.");
-        }
-    }
-
-    @PostMapping("/node/{nodeId}/remove-file")
-    public ResponseEntity<?> removeFile(
-            @CookieValue(value = "userId", required = false) String userId,
-            @PathVariable Long nodeId,
-            @RequestParam Long fileId
-    ) {
-        try {
-            User user = validateUser(userId);
-            mindMapService.removeFile(user, nodeId, fileId);
-            return ResponseEntity.ok("File removed successfully.");
-        } catch (Exception e) {
-            logger.error("Error removing file for node {}: {}", nodeId, e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to remove file.");
-        }
-    }
-
-    @PostMapping("/node/{nodeId}/add-icon")
-    public ResponseEntity<?> addIcon(
-            @CookieValue(value = "userId", required = false) String userId,
-            @PathVariable Long nodeId,
-            @RequestBody NodeIcon icon
-    ) {
-        try {
-            User user = validateUser(userId);
-            mindMapService.addIcon(user, nodeId, icon);
-            return ResponseEntity.ok("Icon added successfully.");
-        } catch (Exception e) {
-            logger.error("Error adding icon for node {}: {}", nodeId, e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to add icon.");
-        }
-    }
-
-    @PostMapping("/node/{nodeId}/add-file")
-    public ResponseEntity<?> addNodeFile(
-            @CookieValue(value = "userId", required = false) String userId,
-            @PathVariable Long nodeId,
-            @RequestBody NodeFile newFile
-    ) {
-        try {
-            User user = validateUser(userId);
-            mindMapService.addNodeFile(user, nodeId, newFile);
-            return ResponseEntity.ok("File added successfully.");
-        } catch (Exception e) {
-            logger.error("Error adding file for node {}: {}", nodeId, e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to add file.");
-        }
-    }
-
-    @PostMapping("/node/{nodeId}")
-    public ResponseEntity<?> deleteNode(
-            @CookieValue(value = "userId", required = false) String userId,
-            @PathVariable Long nodeId
-    ) {
-        try {
-            validateUser(userId);
-            mindMapService.deleteNode(nodeId);
-            return ResponseEntity.ok("Node deleted successfully.");
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
-        } catch (NoSuchElementException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Node not found.");
-        } catch (Exception e) {
-            logger.error("Error deleting node {}: {}", nodeId, e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to delete node.");
-        }
-    }
-
     @PostMapping("/add-connection")
     public ResponseEntity<?> addConnection(
             @CookieValue(value = "userId", required = false) String userId,
@@ -422,10 +261,29 @@ public class MindMapController {
         }
     }
 
-    @PostMapping("/connection/{connectionId}")
+    @GetMapping("/{mindMapId}/connections")
+    public ResponseEntity<?> getConnectionsByMindMapId(
+            @CookieValue(value = "userId", required = false) String userId,
+            @PathVariable Long mindMapId
+    ) {
+        try {
+            User user = validateUser(userId);
+            List<Connection> connections = mindMapService.getConnectionsByMindMapId(user, mindMapId);
+            return ResponseEntity.ok(connections);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Mind map or connections not found.");
+        } catch (Exception e) {
+            logger.error("Error fetching connections for mind map {}: {}", mindMapId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
+        }
+    }
+
+    @DeleteMapping("/delete-connection")
     public ResponseEntity<?> deleteConnection(
             @CookieValue(value = "userId", required = false) String userId,
-            @PathVariable Long connectionId
+            @RequestParam Long connectionId
     ) {
         try {
             validateUser(userId);
@@ -438,6 +296,148 @@ public class MindMapController {
         } catch (Exception e) {
             logger.error("Error deleting connection {}: {}", connectionId, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to delete connection.");
+        }
+    }
+
+    @PostMapping("/node/add")
+    public ResponseEntity<?> addNode(
+            @CookieValue(value = "userId", required = false) String userId,
+            @RequestBody NodeCreationRequest node
+    ) {
+        try {
+            validateUser(userId);
+
+            mindMapService.addNode(node);
+
+            return ResponseEntity.status(HttpStatus.OK).body("Node added successfully.");
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Mind map or related resource not found.");
+        } catch (Exception e) {
+            logger.error("Error adding node", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
+        }
+    }
+
+    @DeleteMapping("/node/delete")
+    public ResponseEntity<?> deleteNode(
+            @CookieValue(value = "userId", required = false) String userId,
+            @RequestParam Long nodeId
+    ) {
+        try {
+            validateUser(userId);
+            mindMapService.deleteNode(nodeId);
+            return ResponseEntity.ok("Node deleted successfully.");
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Node not found.");
+        } catch (Exception e) {
+            logger.error("Error deleting node {}: {}", nodeId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to delete node.");
+        }
+    }
+
+    @PostMapping("/node/{nodeId}/add-icon")
+    public ResponseEntity<?> addIcon(
+            @CookieValue(value = "userId", required = false) String userId,
+            @PathVariable Long nodeId,
+            @RequestBody NodeIcon icon
+    ) {
+        try {
+            User user = validateUser(userId);
+            mindMapService.addIcon(user, nodeId, icon);
+            return ResponseEntity.ok("Icon added successfully.");
+        } catch (Exception e) {
+            logger.error("Error adding icon for node {}: {}", nodeId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to add icon.");
+        }
+    }
+
+    @GetMapping("/node/{nodeId}/icons")
+    public ResponseEntity<?> getNodeIcons(
+            @CookieValue(value = "userId", required = false) String userId,
+            @PathVariable Long nodeId
+    ) {
+        try {
+            User user = validateUser(userId);
+            List<Icon> icons = mindMapService.getIconsByNodeId(user, nodeId);
+            return ResponseEntity.ok(icons);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Error retrieving icons for node {}: {}", nodeId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
+        }
+    }
+
+    @DeleteMapping("/node/{nodeId}/delete-icon")
+    public ResponseEntity<?> deleteIcon(
+            @CookieValue(value = "userId", required = false) String userId,
+            @PathVariable Long nodeId,
+            @RequestParam Long iconId
+    ) {
+        try {
+            User user = validateUser(userId);
+            mindMapService.removeIcon(user, nodeId, iconId);
+            return ResponseEntity.ok("Icon removed successfully.");
+        } catch (Exception e) {
+            logger.error("Error removing icon for node {}: {}", nodeId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to remove icon.");
+        }
+    }
+
+    @PostMapping("/node/{nodeId}/add-file")
+    public ResponseEntity<?> addNodeFile(
+            @CookieValue(value = "userId", required = false) String userId,
+            @PathVariable Long nodeId,
+            @RequestBody NodeFile newFile
+    ) {
+        try {
+            User user = validateUser(userId);
+            mindMapService.addNodeFile(user, nodeId, newFile);
+            return ResponseEntity.ok("File added successfully.");
+        } catch (Exception e) {
+            logger.error("Error adding file for node {}: {}", nodeId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to add file.");
+        }
+    }
+
+    @GetMapping("/node/{nodeId}/files")
+    public ResponseEntity<?> getNodeFiles(
+            @CookieValue(value = "userId", required = false) String userId,
+            @PathVariable Long nodeId
+    ) {
+        try {
+            User user = validateUser(userId);
+            List<File> files = mindMapService.getFilesByNodeId(user, nodeId);
+            return ResponseEntity.ok(files);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Error retrieving files for node {}: {}", nodeId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
+        }
+    }
+
+    @DeleteMapping("/node/{nodeId}/delete-file")
+    public ResponseEntity<?> deleteFile(
+            @CookieValue(value = "userId", required = false) String userId,
+            @PathVariable Long nodeId,
+            @RequestParam Long fileId
+    ) {
+        try {
+            User user = validateUser(userId);
+            mindMapService.removeFile(user, nodeId, fileId);
+            return ResponseEntity.ok("File removed successfully.");
+        } catch (Exception e) {
+            logger.error("Error removing file for node {}: {}", nodeId, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to remove file.");
         }
     }
 }

@@ -13,7 +13,6 @@ public class User {
     private String name;
     private String password;
     private String email;
-    private String accountStatus;
     private final Date creationDate;
 
     public User() {
@@ -50,14 +49,6 @@ public class User {
 
     public void setEmail(String email) {
         this.email = email;
-    }
-
-    public String getAccountStatus() {
-        return accountStatus;
-    }
-
-    public void setAccountStatus(String accountStatus) {
-        this.accountStatus = accountStatus;
     }
 
     public Date getCreationDate() {

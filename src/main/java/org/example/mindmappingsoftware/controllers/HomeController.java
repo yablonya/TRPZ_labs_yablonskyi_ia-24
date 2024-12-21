@@ -42,8 +42,7 @@ public class HomeController {
 
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(
-            @RequestBody UserLoginRequest request,
-            HttpServletResponse response
+            @RequestBody UserLoginRequest request
     ) {
         try {
             User user = userService.loginUser(request.getEmail(), request.getPassword());
