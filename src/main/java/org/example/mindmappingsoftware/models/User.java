@@ -3,27 +3,28 @@ package org.example.mindmappingsoftware.models;
 import jakarta.persistence.*;
 
 import java.util.Date;
+import java.util.UUID;
 
 @Entity
 @Table(name = "\"user\"")
 public class User {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
     private String name;
     private String password;
     private String email;
     private final Date creationDate;
 
     public User() {
+        this.id = UUID.randomUUID().toString();
         this.creationDate = new Date();
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 

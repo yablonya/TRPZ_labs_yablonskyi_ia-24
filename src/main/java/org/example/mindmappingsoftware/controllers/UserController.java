@@ -25,7 +25,7 @@ public class UserController {
 
     @GetMapping("/{userId}")
     public ResponseEntity<?> getUser(
-            @PathVariable Long userId
+            @PathVariable String userId
     ) {
         try {
             User user = userService.getUser(userId);

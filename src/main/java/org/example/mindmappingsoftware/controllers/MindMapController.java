@@ -44,7 +44,7 @@ public class MindMapController {
         if (userId.equals("null")) {
             throw new IllegalStateException("User not logged in.");
         } try {
-            return userService.getUser(Long.parseLong(userId));
+            return userService.getUser(userId);
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("Invalid user ID format.");
         }
@@ -98,7 +98,7 @@ public class MindMapController {
     @GetMapping("/{mindMapId}")
     public ResponseEntity<?> getMindMap(
             @CookieValue(value = "userId", required = false) String userId,
-            @PathVariable Long mindMapId
+            @PathVariable String mindMapId
     ) {
         try {
             User user = validateUser(userId);
@@ -116,10 +116,32 @@ public class MindMapController {
         }
     }
 
+    @DeleteMapping("/{mindMapId}/delete")
+    public ResponseEntity<?> deleteMindMap(
+            @CookieValue(value = "userId", required = false) String userId,
+            @PathVariable String mindMapId
+    ) {
+        try {
+            User user = validateUser(userId);
+
+            mindMapHistoryService.deleteMindMapHistory(user, mindMapId);
+            mindMapService.deleteMindMap(user, mindMapId);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body("Mind map deleted successfully.");
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Error creating mind map", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred.");
+        }
+    }
+
     @PostMapping("/{id}/save")
     public ResponseEntity<?> saveMindMapState(
             @CookieValue(value = "userId", required = false) String userId,
-            @PathVariable Long id
+            @PathVariable String id
     ) {
         try {
             validateUser(userId);
@@ -138,7 +160,7 @@ public class MindMapController {
     @GetMapping("/{id}/history")
     public ResponseEntity<?> getMindMapHistory(
             @CookieValue(value = "userId", required = false) String userId,
-            @PathVariable Long id
+            @PathVariable String id
     ) {
         try {
             validateUser(userId);
@@ -154,18 +176,18 @@ public class MindMapController {
         }
     }
 
-    @PostMapping("/{id}/restore")
+    @PostMapping("/{mindMapId}/restore")
     public ResponseEntity<?> restoreMindMapState(
             @CookieValue(value = "userId", required = false) String userId,
-            @PathVariable Long id,
+            @PathVariable String mindMapId,
             @RequestParam("restoreDate") String restoreDate
     ) {
         try {
-            validateUser(userId);
+            User user = validateUser(userId);
 
             LocalDateTime parsedDate = LocalDateTime.parse(restoreDate);
             logger.info("{}", parsedDate);
-            mindMapHistoryService.restoreMindMapState(id, parsedDate);
+            mindMapHistoryService.restoreMindMapState(user, mindMapId, parsedDate);
 
             return ResponseEntity.ok("State restored successfully to snapshot at " + restoreDate);
         } catch (IllegalStateException e) {
@@ -183,7 +205,7 @@ public class MindMapController {
     @PutMapping("/{mindMapId}/update-name")
     public ResponseEntity<?> updateMindMapName(
             @CookieValue(value = "userId", required = false) String userId,
-            @PathVariable Long mindMapId,
+            @PathVariable String mindMapId,
             @RequestParam String newName
     ) {
         try {
@@ -204,7 +226,7 @@ public class MindMapController {
     @GetMapping("/{mindMapId}/nodes")
     public ResponseEntity<?> getNodes(
             @CookieValue(value = "userId", required = false) String userId,
-            @PathVariable Long mindMapId
+            @PathVariable String mindMapId
     ) {
         try {
             User user = validateUser(userId);
@@ -221,7 +243,7 @@ public class MindMapController {
     @PutMapping("/{mindMapId}/update-nodes")
     public ResponseEntity<?> updateNodes(
             @CookieValue(value = "userId", required = false) String userId,
-            @PathVariable Long mindMapId,
+            @PathVariable String mindMapId,
             @RequestBody List<Node> nodes
     ) {
         try {
@@ -242,8 +264,8 @@ public class MindMapController {
     @PostMapping("/add-connection")
     public ResponseEntity<?> addConnection(
             @CookieValue(value = "userId", required = false) String userId,
-            @RequestParam Long fromNodeId,
-            @RequestParam Long toNodeId
+            @RequestParam String fromNodeId,
+            @RequestParam String toNodeId
     ) {
         try {
             validateUser(userId);
@@ -264,7 +286,7 @@ public class MindMapController {
     @GetMapping("/{mindMapId}/connections")
     public ResponseEntity<?> getConnectionsByMindMapId(
             @CookieValue(value = "userId", required = false) String userId,
-            @PathVariable Long mindMapId
+            @PathVariable String mindMapId
     ) {
         try {
             User user = validateUser(userId);
@@ -283,7 +305,7 @@ public class MindMapController {
     @DeleteMapping("/delete-connection")
     public ResponseEntity<?> deleteConnection(
             @CookieValue(value = "userId", required = false) String userId,
-            @RequestParam Long connectionId
+            @RequestParam String connectionId
     ) {
         try {
             validateUser(userId);
@@ -323,7 +345,7 @@ public class MindMapController {
     @DeleteMapping("/node/delete")
     public ResponseEntity<?> deleteNode(
             @CookieValue(value = "userId", required = false) String userId,
-            @RequestParam Long nodeId
+            @RequestParam String nodeId
     ) {
         try {
             validateUser(userId);
@@ -342,7 +364,7 @@ public class MindMapController {
     @PostMapping("/node/{nodeId}/add-icon")
     public ResponseEntity<?> addIcon(
             @CookieValue(value = "userId", required = false) String userId,
-            @PathVariable Long nodeId,
+            @PathVariable String nodeId,
             @RequestBody NodeIcon icon
     ) {
         try {
@@ -358,7 +380,7 @@ public class MindMapController {
     @GetMapping("/node/{nodeId}/icons")
     public ResponseEntity<?> getNodeIcons(
             @CookieValue(value = "userId", required = false) String userId,
-            @PathVariable Long nodeId
+            @PathVariable String nodeId
     ) {
         try {
             User user = validateUser(userId);
@@ -377,8 +399,8 @@ public class MindMapController {
     @DeleteMapping("/node/{nodeId}/delete-icon")
     public ResponseEntity<?> deleteIcon(
             @CookieValue(value = "userId", required = false) String userId,
-            @PathVariable Long nodeId,
-            @RequestParam Long iconId
+            @PathVariable String nodeId,
+            @RequestParam String iconId
     ) {
         try {
             User user = validateUser(userId);
@@ -393,7 +415,7 @@ public class MindMapController {
     @PostMapping("/node/{nodeId}/add-file")
     public ResponseEntity<?> addNodeFile(
             @CookieValue(value = "userId", required = false) String userId,
-            @PathVariable Long nodeId,
+            @PathVariable String nodeId,
             @RequestBody NodeFile newFile
     ) {
         try {
@@ -409,7 +431,7 @@ public class MindMapController {
     @GetMapping("/node/{nodeId}/files")
     public ResponseEntity<?> getNodeFiles(
             @CookieValue(value = "userId", required = false) String userId,
-            @PathVariable Long nodeId
+            @PathVariable String nodeId
     ) {
         try {
             User user = validateUser(userId);
@@ -428,8 +450,8 @@ public class MindMapController {
     @DeleteMapping("/node/{nodeId}/delete-file")
     public ResponseEntity<?> deleteFile(
             @CookieValue(value = "userId", required = false) String userId,
-            @PathVariable Long nodeId,
-            @RequestParam Long fileId
+            @PathVariable String nodeId,
+            @RequestParam String fileId
     ) {
         try {
             User user = validateUser(userId);

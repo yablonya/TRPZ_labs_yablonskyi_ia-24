@@ -3,12 +3,15 @@ package org.example.mindmappingsoftware.models;
 import jakarta.persistence.*;
 
 import java.util.Date;
+import java.util.UUID;
 
 @Entity
 public class Connection {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
+    @ManyToOne
+    @JoinColumn(name = "mind_map_id")
+    private MindMap mindMap;
     @ManyToOne
     @JoinColumn(name = "from_node_id")
     private Node fromNode;
@@ -18,15 +21,24 @@ public class Connection {
     private final Date creationDate;
 
     public Connection() {
+        this.id = UUID.randomUUID().toString();
         this.creationDate = new Date();
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
+    }
+
+    public MindMap getMindMap() {
+        return mindMap;
+    }
+
+    public void setMindMap(MindMap mindMap) {
+        this.mindMap = mindMap;
     }
 
     public Node getFromNode() {

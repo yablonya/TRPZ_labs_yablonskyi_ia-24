@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -61,7 +62,7 @@ public class MindMapService {
         }
     }
 
-    public void updateMindMapName(User user, Long mindMapId, String newName) {
+    public void updateMindMapName(User user, String mindMapId, String newName) {
         try {
             if (newName == null || newName.isEmpty()) {
                 throw new IllegalArgumentException("New name cannot be null or empty.");
@@ -87,7 +88,7 @@ public class MindMapService {
         }
     }
 
-    public MindMap getMindMap(Long mindMapId) {
+    public MindMap getMindMap(String mindMapId) {
         try {
             return mindMapRepository.findById(mindMapId)
                     .orElseThrow(() -> new NoSuchElementException("Mind map not found."));
@@ -100,7 +101,45 @@ public class MindMapService {
         }
     }
 
-    public List<Node> getNodesByMindMapId(User user, Long mindMapId) {
+    @Transactional
+    public void deleteMindMap(User user, String mindMapId) {
+        try {
+            FullMindMap fullMindMap = getFullMindMap(user, mindMapId);
+
+            for (Node node : fullMindMap.getNodes()) {
+                fileRepository.deleteByNode(node);
+                iconRepository.deleteByNode(node);
+            }
+
+            connectionRepository.deleteAllByMindMap(fullMindMap.getMindMap());
+            connectionRepository.flush();
+            nodeRepository.deleteAllByMindMap(fullMindMap.getMindMap());
+            nodeRepository.flush();
+            mindMapRepository.deleteById(fullMindMap.getMindMap().getId());
+
+            logger.info("Mind map deleted successfully for user with id: {}", user.getId());
+        } catch (Exception e) {
+            logger.error("Error deleting mind map for user {}: {}", user.getId(), e.getMessage());
+            throw new RuntimeException("Failed to delete mind map", e);
+        }
+    }
+
+    public void restoreMindMap(FullMindMap fullMindMap) {
+        try {
+            mindMapRepository.save(fullMindMap.getMindMap());
+            nodeRepository.saveAll(fullMindMap.getNodes());
+            connectionRepository.saveAll(fullMindMap.getConnections());
+            iconRepository.saveAll(fullMindMap.getIcons());
+            fileRepository.saveAll(fullMindMap.getFiles());
+
+            logger.info("Mind map restored successfully");
+        } catch (Exception e) {
+            logger.error("Error restoring mind map {}: {}", fullMindMap.getMindMap().getId(), e.getMessage());
+            throw new RuntimeException("Failed to restoring mind map", e);
+        }
+    }
+
+    public List<Node> getNodesByMindMapId(User user, String mindMapId) {
         try {
             MindMap mindMap = getMindMap(mindMapId);
 
@@ -127,7 +166,7 @@ public class MindMapService {
         }
     }
 
-    public FullMindMap getFullMindMap(User user, Long mindMapId) {
+    public FullMindMap getFullMindMap(User user, String mindMapId) {
         try {
             MindMap mindMap = getMindMap(mindMapId);
 
@@ -136,10 +175,22 @@ public class MindMapService {
                 throw new IllegalArgumentException("Mind map does not belong to the user.");
             }
 
-            List<Node> nodes = nodeRepository.findAllByMindMap(mindMap);
             FullMindMap fullMindMap = new FullMindMap();
+            List<Node> nodes = nodeRepository.findAllByMindMap(mindMap);
+            List<Connection> connections = connectionRepository.findAllByMindMap(mindMap);
+            List<Icon> icons = nodes.stream()
+                    .flatMap(node -> iconRepository.findAllByNode(node).stream())
+                    .collect(Collectors.toList());
+
+            List<File> files = nodes.stream()
+                    .flatMap(node -> fileRepository.findAllByNode(node).stream())
+                    .collect(Collectors.toList());
+
             fullMindMap.setMindMap(mindMap);
             fullMindMap.setNodes(nodes);
+            fullMindMap.setConnections(connections);
+            fullMindMap.setIcons(icons);
+            fullMindMap.setFiles(files);
 
             logger.info("Retrieved full mind map for user {}: {}", user.getId(), mindMapId);
             return fullMindMap;
@@ -154,7 +205,7 @@ public class MindMapService {
 
     public void addNode(NodeCreationRequest nodeRequest) {
         try {
-            MindMap mindMap = getMindMap(Long.parseLong(nodeRequest.getMindMapId()));
+            MindMap mindMap = getMindMap(nodeRequest.getMindMapId());
 
             Node newNode = new Node();
             newNode.setMindMap(mindMap);
@@ -177,6 +228,7 @@ public class MindMapService {
                         .orElse(null);
 
                 Connection connection = new Connection();
+                connection.setMindMap(newNode.getMindMap());
                 connection.setFromNode(newNode);
                 connection.setToNode(nearestNode);
                 connectionRepository.save(connection);
@@ -220,7 +272,7 @@ public class MindMapService {
         }
     }
 
-    public void updateNodes(User user, Long mindMapId, List<Node> updatedNodes) {
+    public void updateNodes(User user, String mindMapId, List<Node> updatedNodes) {
         try {
             MindMap mindMap = getMindMap(mindMapId);
 
@@ -254,7 +306,7 @@ public class MindMapService {
         }
     }
 
-    public List<Connection> getConnectionsByMindMapId(User user, Long mindMapId) {
+    public List<Connection> getConnectionsByMindMapId(User user, String mindMapId) {
         try {
             MindMap mindMap = getMindMap(mindMapId);
 
@@ -280,7 +332,7 @@ public class MindMapService {
         }
     }
 
-    public List<File> getFilesByNodeId(User user, Long nodeId) {
+    public List<File> getFilesByNodeId(User user, String nodeId) {
         try {
             Node node = nodeRepository.findById(nodeId)
                     .orElseThrow(() -> new NoSuchElementException("Node not found: " + nodeId));
@@ -301,7 +353,7 @@ public class MindMapService {
         }
     }
 
-    public List<Icon> getIconsByNodeId(User user, Long nodeId) {
+    public List<Icon> getIconsByNodeId(User user, String nodeId) {
         try {
             Node node = nodeRepository.findById(nodeId)
                     .orElseThrow(() -> new NoSuchElementException("Node not found: " + nodeId));
@@ -322,7 +374,7 @@ public class MindMapService {
         }
     }
 
-    public void removeIcon(User user, Long nodeId, Long iconId) {
+    public void removeIcon(User user, String nodeId, String iconId) {
         Node node = nodeRepository.findById(nodeId)
                 .orElseThrow(() -> new NoSuchElementException("Node not found: " + nodeId));
         MindMap mindMap = node.getMindMap();
@@ -342,7 +394,7 @@ public class MindMapService {
         logger.info("Icon {} removed from node {} by user {}", iconId, nodeId, user.getId());
     }
 
-    public void removeFile(User user, Long nodeId, Long fileId) {
+    public void removeFile(User user, String nodeId, String fileId) {
         Node node = nodeRepository.findById(nodeId)
                 .orElseThrow(() -> new NoSuchElementException("Node not found: " + nodeId));
         MindMap mindMap = node.getMindMap();
@@ -362,7 +414,7 @@ public class MindMapService {
         logger.info("File {} removed from node {} by user {}", fileId, nodeId, user.getId());
     }
 
-    public void addIcon(User user, Long nodeId, NodeIcon icon) {
+    public void addIcon(User user, String nodeId, NodeIcon icon) {
         Node node = nodeRepository.findById(nodeId)
                 .orElseThrow(() -> new NoSuchElementException("Node not found: " + nodeId));
         MindMap mindMap = node.getMindMap();
@@ -380,7 +432,7 @@ public class MindMapService {
         logger.info("Icon added to node {} by user {}", nodeId, user.getId());
     }
 
-    public void addNodeFile(User user, Long nodeId, NodeFile file) {
+    public void addNodeFile(User user, String nodeId, NodeFile file) {
         Node node = nodeRepository.findById(nodeId)
                 .orElseThrow(() -> new NoSuchElementException("Node not found: " + nodeId));
         MindMap mindMap = node.getMindMap();
@@ -399,7 +451,7 @@ public class MindMapService {
         logger.info("File added to node {} by user {}", nodeId, user.getId());
     }
 
-    public void deleteNode(Long nodeId) {
+    public void deleteNode(String nodeId) {
         try {
             Node node = nodeRepository.findById(nodeId)
                     .orElseThrow(() -> new NoSuchElementException("Node not found: " + nodeId));
@@ -408,8 +460,6 @@ public class MindMapService {
 
             iconRepository.deleteAll(iconRepository.findAllByNode(node));
             fileRepository.deleteAll(fileRepository.findAllByNode(node));
-
-            // Видалення самого вузла
             nodeRepository.delete(node);
             logger.info("Node {} deleted successfully", nodeId);
         } catch (NoSuchElementException e) {
@@ -421,7 +471,7 @@ public class MindMapService {
         }
     }
 
-    public void addConnection(Long fromNodeId, Long toNodeId) {
+    public void addConnection(String fromNodeId, String toNodeId) {
         try {
             Node fromNode = nodeRepository.findById(fromNodeId)
                     .orElseThrow(() -> new NoSuchElementException("From Node not found: " + fromNodeId));
@@ -450,7 +500,7 @@ public class MindMapService {
         }
     }
 
-    public void deleteConnection(Long connectionId) {
+    public void deleteConnection(String connectionId) {
         try {
             Connection connection = connectionRepository.findById(connectionId)
                     .orElseThrow(() -> new NoSuchElementException("Connection not found: " + connectionId));

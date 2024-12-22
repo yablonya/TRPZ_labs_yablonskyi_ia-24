@@ -3,12 +3,12 @@ package org.example.mindmappingsoftware.models;
 import jakarta.persistence.*;
 
 import java.util.Date;
+import java.util.UUID;
 
 @Entity
 public class MindMap {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
     @ManyToOne
     @JoinColumn(name = "creator_id")
     private User creator;
@@ -16,14 +16,15 @@ public class MindMap {
     private final Date creationDate;
 
     public MindMap() {
+        this.id = UUID.randomUUID().toString();
         this.creationDate = new Date();
     }
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 

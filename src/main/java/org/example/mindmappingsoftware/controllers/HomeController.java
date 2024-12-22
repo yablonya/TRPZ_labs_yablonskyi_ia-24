@@ -55,7 +55,7 @@ public class HomeController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logoutUser(HttpServletResponse response) {
+    public ResponseEntity<?> logoutUser() {
         try {
             HttpHeaders newHeaders = userService.clearUserCookie();
             logger.info("User logged out successfully.");

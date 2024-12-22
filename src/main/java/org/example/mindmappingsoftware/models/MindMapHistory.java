@@ -2,12 +2,13 @@ package org.example.mindmappingsoftware.models;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.Date;
+import java.util.UUID;
 
 @Entity
 public class MindMapHistory {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
     @ManyToOne
     @JoinColumn(name = "mind_map_id", nullable = false)
@@ -19,12 +20,15 @@ public class MindMapHistory {
     @Column(name = "saved_at", nullable = false)
     private LocalDateTime savedAt;
 
-    // Геттери та сеттери
-    public Long getId() {
+    public MindMapHistory() {
+        this.id = UUID.randomUUID().toString();
+    }
+
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 

@@ -49,7 +49,7 @@ public class UserService {
         return user;
     }
 
-    public User getUser(Long userId) {
+    public User getUser(String userId) {
         User user = userRepository.findById(userId).orElse(null);
 
         if (user == null) {

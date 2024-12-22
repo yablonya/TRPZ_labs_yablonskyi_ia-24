@@ -8,6 +8,6 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface MindMapRepository extends JpaRepository<MindMap, Long> {
+public interface MindMapRepository extends JpaRepository<MindMap, String> {
     List<MindMap> findByCreator(User user);
 }

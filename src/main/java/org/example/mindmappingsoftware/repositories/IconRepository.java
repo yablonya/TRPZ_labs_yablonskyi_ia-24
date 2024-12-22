@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface IconRepository extends JpaRepository<Icon, Long> {
+public interface IconRepository extends JpaRepository<Icon, String> {
     List<Icon> findAllByNode(Node node);
+    void deleteByNode(Node node);
 }

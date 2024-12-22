@@ -2,7 +2,9 @@ package org.example.mindmappingsoftware.services;
 
 import org.example.mindmappingsoftware.dto.FullMindMap;
 import org.example.mindmappingsoftware.mementos.MindMapMemento;
+import org.example.mindmappingsoftware.models.MindMap;
 import org.example.mindmappingsoftware.models.MindMapHistory;
+import org.example.mindmappingsoftware.models.User;
 import org.example.mindmappingsoftware.repositories.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,22 +21,19 @@ import java.util.stream.Collectors;
 @Service
 public class MindMapHistoryService {
     private final MindMapHistoryRepository mindMapHistoryRepository;
-    private final NodeRepository nodeRepository;
     private final MindMapService mindMapService;
     private static final Logger logger = LoggerFactory.getLogger(MindMapHistoryService.class);
 
     @Autowired
     public MindMapHistoryService(
             MindMapHistoryRepository mindMapHistoryRepository,
-            NodeRepository nodeRepository,
             MindMapService mindMapService
     ) {
         this.mindMapHistoryRepository = mindMapHistoryRepository;
-        this.nodeRepository = nodeRepository;
         this.mindMapService = mindMapService;
     }
 
-    public void saveMindMapState(Long mindMapId) {
+    public void saveMindMapState(String mindMapId) {
         try {
             FullMindMap fullMindMap = mindMapService.getFullMindMap(
                     mindMapService.getMindMap(mindMapId).getCreator(),
@@ -44,7 +43,7 @@ public class MindMapHistoryService {
 
             MindMapHistory history = new MindMapHistory();
             history.setMindMap(fullMindMap.getMindMap());
-            history.setSnapshot(memento.getSnapshot());
+            history.setSnapshot(memento.snapshot());
             history.setSavedAt(LocalDateTime.now());
 
             mindMapHistoryRepository.save(history);
@@ -60,8 +59,9 @@ public class MindMapHistoryService {
     }
 
     @Transactional
-    public void restoreMindMapState(Long mindMapId, LocalDateTime restoreDate) {
+    public void restoreMindMapState(User user, String mindMapId, LocalDateTime restoreDate) {
         try {
+            List<MindMapHistory> allHistory = mindMapHistoryRepository.findAllByMindMapId(mindMapId);
             MindMapHistory snapshot = mindMapHistoryRepository
                     .findByMindMapIdAndSavedAt(mindMapId, restoreDate);
 
@@ -73,10 +73,11 @@ public class MindMapHistoryService {
             MindMapMemento memento = new MindMapMemento(snapshot.getSnapshot());
             FullMindMap restoredMap = new FullMindMap();
             restoredMap.restoreState(memento);
-
-            nodeRepository.deleteAllByMindMapId(mindMapId);
-
-            nodeRepository.saveAll(restoredMap.getNodes());
+            mindMapHistoryRepository.deleteAllByMindMapId(mindMapId);
+            mindMapHistoryRepository.flush();
+            mindMapService.deleteMindMap(user, mindMapId);
+            mindMapService.restoreMindMap(restoredMap);
+            mindMapHistoryRepository.saveAll(allHistory);
 
             logger.info("Restored state for mind map with ID {} to snapshot at {}", mindMapId, restoreDate);
         } catch (NoSuchElementException e) {
@@ -88,7 +89,7 @@ public class MindMapHistoryService {
         }
     }
 
-    public List<FullMindMap> getMindMapHistory(Long mindMapId) {
+    public List<FullMindMap> getMindMapHistory(String mindMapId) {
         try {
             List<MindMapHistory> history = mindMapHistoryRepository.findAllByMindMapIdOrderBySavedAtDesc(mindMapId);
 
@@ -118,6 +119,17 @@ public class MindMapHistoryService {
         } catch (Exception e) {
             logger.error("Error retrieving history for mind map with ID {}: {}", mindMapId, e.getMessage());
             throw new RuntimeException("Failed to retrieve mind map history", e);
+        }
+    }
+
+    public void deleteMindMapHistory(User user, String mindMapId) {
+        try {
+            mindMapHistoryRepository.deleteAllByMindMapId(mindMapId);
+
+            logger.info("Mind map deleted successfully for user with id: {}", user.getId());
+        } catch (Exception e) {
+            logger.error("Error deleting mind map for user {}: {}", user.getId(), e.getMessage());
+            throw new RuntimeException("Failed to delete mind map", e);
         }
     }
 }

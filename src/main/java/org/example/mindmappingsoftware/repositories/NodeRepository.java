@@ -10,10 +10,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Repository
-public interface NodeRepository extends JpaRepository<Node, Long> {
+public interface NodeRepository extends JpaRepository<Node, String> {
     List<Node> findAllByMindMap(MindMap mindMap);
 
     @Modifying
     @Transactional
-    void deleteAllByMindMapId(Long mindMapId);
+    void deleteAllByMindMap(MindMap mindMap);
 }
