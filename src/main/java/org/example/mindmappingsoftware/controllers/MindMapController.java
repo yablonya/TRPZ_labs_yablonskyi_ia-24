@@ -101,9 +101,9 @@ public class MindMapController {
             @PathVariable String mindMapId
     ) {
         try {
-            User user = validateUser(userId);
+            validateUser(userId);
 
-            FullMindMap mindMap = mindMapService.getFullMindMap(user, mindMapId);
+            MindMap mindMap = mindMapService.getMindMap(mindMapId);
 
             return ResponseEntity.status(HttpStatus.OK).body(mindMap);
         } catch (IllegalStateException e) {
@@ -138,15 +138,15 @@ public class MindMapController {
         }
     }
 
-    @PostMapping("/{id}/save")
+    @PostMapping("/{mindMapId}/save")
     public ResponseEntity<?> saveMindMapState(
             @CookieValue(value = "userId", required = false) String userId,
-            @PathVariable String id
+            @PathVariable String mindMapId
     ) {
         try {
             validateUser(userId);
 
-            mindMapHistoryService.saveMindMapState(id);
+            mindMapHistoryService.saveMindMapState(mindMapId);
 
             return ResponseEntity.ok("State saved successfully");
         } catch (IllegalStateException e) {
@@ -157,17 +157,37 @@ public class MindMapController {
         }
     }
 
-    @GetMapping("/{id}/history")
+    @GetMapping("/{mindMapId}/history")
     public ResponseEntity<?> getMindMapHistory(
             @CookieValue(value = "userId", required = false) String userId,
-            @PathVariable String id
+            @PathVariable String mindMapId
     ) {
         try {
             validateUser(userId);
 
-            List<FullMindMap> history = mindMapHistoryService.getMindMapHistory(id);
+            List<FullMindMap> history = mindMapHistoryService.getMindMapHistory(mindMapId);
 
             return ResponseEntity.ok(history);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not logged in.");
+        } catch (Exception e) {
+            logger.error("Error fetching mind map history", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching history");
+        }
+    }
+
+    @DeleteMapping("/{mindMapId}/history/delete-snapshot")
+    public ResponseEntity<?> deleteMindMapSnapshot(
+            @CookieValue(value = "userId", required = false) String userId,
+            @PathVariable String mindMapId,
+            @RequestParam String snapshotId
+    ) {
+        try {
+            User user = validateUser(userId);
+
+            mindMapHistoryService.deleteMindMapSnapshot(user, mindMapId, snapshotId);
+
+            return ResponseEntity.ok("Successfully deleted snapshot with id: " + snapshotId);
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not logged in.");
         } catch (Exception e) {

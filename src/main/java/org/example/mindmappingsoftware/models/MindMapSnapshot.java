@@ -2,11 +2,10 @@ package org.example.mindmappingsoftware.models;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.UUID;
 
 @Entity
-public class MindMapHistory {
+public class MindMapSnapshot {
     @Id
     private String id;
 
@@ -20,7 +19,7 @@ public class MindMapHistory {
     @Column(name = "saved_at", nullable = false)
     private LocalDateTime savedAt;
 
-    public MindMapHistory() {
+    public MindMapSnapshot() {
         this.id = UUID.randomUUID().toString();
     }
 

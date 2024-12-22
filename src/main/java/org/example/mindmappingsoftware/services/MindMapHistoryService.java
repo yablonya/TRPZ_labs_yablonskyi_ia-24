@@ -3,7 +3,7 @@ package org.example.mindmappingsoftware.services;
 import org.example.mindmappingsoftware.dto.FullMindMap;
 import org.example.mindmappingsoftware.mementos.MindMapMemento;
 import org.example.mindmappingsoftware.models.MindMap;
-import org.example.mindmappingsoftware.models.MindMapHistory;
+import org.example.mindmappingsoftware.models.MindMapSnapshot;
 import org.example.mindmappingsoftware.models.User;
 import org.example.mindmappingsoftware.repositories.*;
 import org.slf4j.Logger;
@@ -39,12 +39,13 @@ public class MindMapHistoryService {
                     mindMapService.getMindMap(mindMapId).getCreator(),
                     mindMapId
             );
-            MindMapMemento memento = fullMindMap.saveState();
 
-            MindMapHistory history = new MindMapHistory();
-            history.setMindMap(fullMindMap.getMindMap());
-            history.setSnapshot(memento.snapshot());
+            MindMapSnapshot history = new MindMapSnapshot();
             history.setSavedAt(LocalDateTime.now());
+            history.setMindMap(fullMindMap.getMindMap());
+            fullMindMap.setSnapshotId(history.getId());
+            MindMapMemento memento = fullMindMap.saveState();
+            history.setSnapshot(memento.snapshot());
 
             mindMapHistoryRepository.save(history);
 
@@ -61,8 +62,8 @@ public class MindMapHistoryService {
     @Transactional
     public void restoreMindMapState(User user, String mindMapId, LocalDateTime restoreDate) {
         try {
-            List<MindMapHistory> allHistory = mindMapHistoryRepository.findAllByMindMapId(mindMapId);
-            MindMapHistory snapshot = mindMapHistoryRepository
+            List<MindMapSnapshot> allHistory = mindMapHistoryRepository.findAllByMindMapId(mindMapId);
+            MindMapSnapshot snapshot = mindMapHistoryRepository
                     .findByMindMapIdAndSavedAt(mindMapId, restoreDate);
 
             if (snapshot == null) {
@@ -91,7 +92,7 @@ public class MindMapHistoryService {
 
     public List<FullMindMap> getMindMapHistory(String mindMapId) {
         try {
-            List<MindMapHistory> history = mindMapHistoryRepository.findAllByMindMapIdOrderBySavedAtDesc(mindMapId);
+            List<MindMapSnapshot> history = mindMapHistoryRepository.findAllByMindMapIdOrderBySavedAtDesc(mindMapId);
 
             if (history.isEmpty()) {
                 logger.warn("No history found for mind map with ID {}", mindMapId);
@@ -119,6 +120,19 @@ public class MindMapHistoryService {
         } catch (Exception e) {
             logger.error("Error retrieving history for mind map with ID {}: {}", mindMapId, e.getMessage());
             throw new RuntimeException("Failed to retrieve mind map history", e);
+        }
+    }
+
+    public void deleteMindMapSnapshot(User user, String mindMapId, String snapshot) {
+        try {
+            MindMap mindMap = mindMapService.getMindMap(mindMapId);
+            mindMapHistoryRepository.findById(snapshot);
+            mindMapHistoryRepository.deleteAllByMindMapId(mindMapId);
+
+            logger.info("Mind map deleted successfully for user with id: {}", user.getId());
+        } catch (Exception e) {
+            logger.error("Error deleting mind map for user {}: {}", user.getId(), e.getMessage());
+            throw new RuntimeException("Failed to delete mind map", e);
         }
     }
 

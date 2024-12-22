@@ -8,12 +8,21 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public class FullMindMap {
+    private String snapshotId;
     private MindMap mindMap;
     private List<Node> nodes;
     private List<Connection> connections;
     private List<Icon> icons;
     private List<File> files;
     private LocalDateTime savedAt;
+
+    public String getSnapshotId() {
+        return snapshotId;
+    }
+
+    public void setSnapshotId(String snapshotId) {
+        this.snapshotId = snapshotId;
+    }
 
     public MindMap getMindMap() {
         return mindMap;
@@ -72,6 +81,7 @@ public class FullMindMap {
     public void restoreState(MindMapMemento memento) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         FullMindMap restored = mapper.readValue(memento.snapshot(), FullMindMap.class);
+        this.snapshotId = restored.getSnapshotId();
         this.mindMap = restored.getMindMap();
         this.nodes = restored.getNodes();
         this.connections = restored.getConnections();
