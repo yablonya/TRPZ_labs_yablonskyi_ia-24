@@ -3,6 +3,7 @@ package org.example.mindmappingsoftware.dto;
 public class NodeFile {
     private String url;
     private String type;
+    private String name;
 
     public String getUrl() {
         return url;
@@ -18,5 +19,13 @@ public class NodeFile {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }

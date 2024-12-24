@@ -254,6 +254,7 @@ public class MindMapService {
                 for (NodeFile nodeFile : nodeRequest.getNodeFiles()) {
                     File file = new File();
                     file.setUrl(nodeFile.getUrl());
+                    file.setName(nodeFile.getName());
                     file.setType(nodeFile.getType());
                     file.setNode(newNode);
                     fileEntities.add(file);
@@ -444,6 +445,7 @@ public class MindMapService {
         File newFile = new File();
         newFile.setUrl(file.getUrl());
         newFile.setType(file.getType());
+        newFile.setName(file.getName());
         newFile.setNode(node);
 
         newFile.setNode(node);

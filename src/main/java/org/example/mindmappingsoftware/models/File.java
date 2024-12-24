@@ -12,6 +12,7 @@ public class File {
     @ManyToOne
     @JoinColumn(name = "node_id")
     private Node node;
+    private String name;
     private String url;
     private String type;
 
@@ -33,6 +34,14 @@ public class File {
 
     public void setNode(Node node) {
         this.node = node;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getUrl() {

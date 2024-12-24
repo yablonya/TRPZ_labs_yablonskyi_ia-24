@@ -1,6 +1,5 @@
 package org.example.mindmappingsoftware.controllers;
 
-import jakarta.servlet.http.HttpServletResponse;
 import org.example.mindmappingsoftware.dto.UserLoginRequest;
 import org.example.mindmappingsoftware.dto.UserRegistrationRequest;
 import org.example.mindmappingsoftware.models.User;
