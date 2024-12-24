@@ -483,6 +483,7 @@ public class MindMapService {
             }
 
             Connection connection = new Connection();
+            connection.setMindMap(fromNode.getMindMap());
             connection.setFromNode(fromNode);
             connection.setToNode(toNode);
             connectionRepository.save(connection);

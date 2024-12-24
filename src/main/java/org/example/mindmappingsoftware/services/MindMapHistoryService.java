@@ -60,15 +60,14 @@ public class MindMapHistoryService {
     }
 
     @Transactional
-    public void restoreMindMapState(User user, String mindMapId, LocalDateTime restoreDate) {
+    public void restoreMindMapState(User user, String mindMapId, String snapshotId) {
         try {
             List<MindMapSnapshot> allHistory = mindMapHistoryRepository.findAllByMindMapId(mindMapId);
-            MindMapSnapshot snapshot = mindMapHistoryRepository
-                    .findByMindMapIdAndSavedAt(mindMapId, restoreDate);
+            MindMapSnapshot snapshot = allHistory.stream().filter((s) -> s.getId().equals(snapshotId)).toList().getFirst();
 
             if (snapshot == null) {
-                logger.warn("No saved state found for mind map with ID {} before {}", mindMapId, restoreDate);
-                throw new NoSuchElementException("No saved state found for MindMap with ID: " + mindMapId + " before " + restoreDate);
+                logger.warn("No saved state found for mind map with ID {}", mindMapId);
+                throw new NoSuchElementException("No saved state found for MindMap with ID: " + mindMapId);
             }
 
             MindMapMemento memento = new MindMapMemento(snapshot.getSnapshot());
@@ -80,7 +79,7 @@ public class MindMapHistoryService {
             mindMapService.restoreMindMap(restoredMap);
             mindMapHistoryRepository.saveAll(allHistory);
 
-            logger.info("Restored state for mind map with ID {} to snapshot at {}", mindMapId, restoreDate);
+            logger.info("Restored state for mind map with ID {}", mindMapId);
         } catch (NoSuchElementException e) {
             logger.warn("Failed to restore state: {}", e.getMessage());
             throw e;
@@ -123,13 +122,17 @@ public class MindMapHistoryService {
         }
     }
 
-    public void deleteMindMapSnapshot(User user, String mindMapId, String snapshot) {
+    public void deleteMindMapSnapshot(User user, String mindMapId, String snapshotId) {
         try {
             MindMap mindMap = mindMapService.getMindMap(mindMapId);
-            mindMapHistoryRepository.findById(snapshot);
-            mindMapHistoryRepository.deleteAllByMindMapId(mindMapId);
+            MindMapSnapshot snapshot = mindMapHistoryRepository.findById(snapshotId).orElseThrow(() -> new NoSuchElementException("Mind map snapshot not found."));
 
-            logger.info("Mind map deleted successfully for user with id: {}", user.getId());
+            if (mindMap.getId().equals(snapshot.getMindMap().getId())) {
+                mindMapHistoryRepository.deleteById(snapshotId);
+                logger.info("Mind map deleted successfully for user with id: {}", user.getId());
+            }
+
+            logger.info("Snapshot with id {} does not belong to mind map with id {}", snapshot, mindMap.getId());
         } catch (Exception e) {
             logger.error("Error deleting mind map for user {}: {}", user.getId(), e.getMessage());
             throw new RuntimeException("Failed to delete mind map", e);

@@ -15,7 +15,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -196,20 +195,18 @@ public class MindMapController {
         }
     }
 
-    @PostMapping("/{mindMapId}/restore")
+    @PostMapping("/{mindMapId}/history/restore")
     public ResponseEntity<?> restoreMindMapState(
             @CookieValue(value = "userId", required = false) String userId,
             @PathVariable String mindMapId,
-            @RequestParam("restoreDate") String restoreDate
+            @RequestParam String snapshotId
     ) {
         try {
             User user = validateUser(userId);
 
-            LocalDateTime parsedDate = LocalDateTime.parse(restoreDate);
-            logger.info("{}", parsedDate);
-            mindMapHistoryService.restoreMindMapState(user, mindMapId, parsedDate);
+            mindMapHistoryService.restoreMindMapState(user, mindMapId, snapshotId);
 
-            return ResponseEntity.ok("State restored successfully to snapshot at " + restoreDate);
+            return ResponseEntity.ok("State restored successfully to snapshot with id " + snapshotId);
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not logged in.");
         } catch (NoSuchElementException e) {
