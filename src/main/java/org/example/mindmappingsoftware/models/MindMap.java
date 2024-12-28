@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.UUID;
 
 @Entity
+@Table(name = "mind_maps")
 public class MindMap {
     @Id
     private String id;

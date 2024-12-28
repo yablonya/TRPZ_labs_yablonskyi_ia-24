@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.UUID;
 
 @Entity
+@Table(name = "connections")
 public class Connection {
     @Id
     private String id;

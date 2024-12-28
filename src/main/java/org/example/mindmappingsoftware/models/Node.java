@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.UUID;
 
 @Entity
+@Table(name = "nodes")
 public class Node {
     @Id
     private String id;
