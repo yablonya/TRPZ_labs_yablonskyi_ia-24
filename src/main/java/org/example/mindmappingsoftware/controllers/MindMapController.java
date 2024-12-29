@@ -212,7 +212,9 @@ public class MindMapController {
         } catch (NoSuchElementException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (DateTimeParseException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid date format. Use ISO-8601 format (e.g., 2024-11-19T15:30:00).");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    "Invalid date format. Use ISO-8601 format (e.g., 2024-11-19T15:30:00)."
+            );
         } catch (Exception e) {
             logger.error("Error restoring mind map state", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error restoring state");
@@ -480,4 +482,3 @@ public class MindMapController {
         }
     }
 }
-

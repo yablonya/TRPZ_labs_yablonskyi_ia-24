@@ -63,7 +63,9 @@ public class MindMapHistoryService {
     public void restoreMindMapState(User user, String mindMapId, String snapshotId) {
         try {
             List<MindMapSnapshot> allHistory = mindMapHistoryRepository.findAllByMindMapId(mindMapId);
-            MindMapSnapshot snapshot = allHistory.stream().filter((s) -> s.getId().equals(snapshotId)).toList().getFirst();
+            MindMapSnapshot snapshot = allHistory.stream().filter(
+                    (s) -> s.getId().equals(snapshotId)
+            ).toList().getFirst();
 
             if (snapshot == null) {
                 logger.warn("No saved state found for mind map with ID {}", mindMapId);
@@ -108,7 +110,10 @@ public class MindMapHistoryService {
 
                             return response;
                         } catch (Exception e) {
-                            logger.error("Error deserializing snapshot for mind map with ID {}: {}", mindMapId, e.getMessage());
+                            logger.error(
+                                    "Error deserializing snapshot for mind map with ID {}: {}",
+                                    mindMapId, e.getMessage()
+                            );
                             throw new RuntimeException("Error deserializing snapshot", e);
                         }
                     })
@@ -125,7 +130,9 @@ public class MindMapHistoryService {
     public void deleteMindMapSnapshot(User user, String mindMapId, String snapshotId) {
         try {
             MindMap mindMap = mindMapService.getMindMap(mindMapId);
-            MindMapSnapshot snapshot = mindMapHistoryRepository.findById(snapshotId).orElseThrow(() -> new NoSuchElementException("Mind map snapshot not found."));
+            MindMapSnapshot snapshot = mindMapHistoryRepository.findById(snapshotId).orElseThrow(
+                    () -> new NoSuchElementException("Mind map snapshot not found.")
+            );
 
             if (mindMap.getId().equals(snapshot.getMindMap().getId())) {
                 mindMapHistoryRepository.deleteById(snapshotId);

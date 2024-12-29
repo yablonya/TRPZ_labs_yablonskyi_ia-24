@@ -27,7 +27,11 @@ public class HomeController {
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody UserRegistrationRequest request) {
         try {
-            User registeredUser = userService.registerUser(request.getName(), request.getEmail(), request.getPassword());
+            User registeredUser = userService.registerUser(
+                    request.getName(),
+                    request.getEmail(),
+                    request.getPassword()
+            );
             HttpHeaders newHeaders = userService.addUserIdToCookie(registeredUser);
 
             logger.info("User registered with email: {}", registeredUser.getEmail());
@@ -66,5 +70,3 @@ public class HomeController {
         }
     }
 }
-
-

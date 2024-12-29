@@ -56,4 +56,3 @@ public class MindMapSnapshot {
         this.savedAt = savedAt;
     }
 }
-

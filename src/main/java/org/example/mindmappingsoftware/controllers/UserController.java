@@ -1,8 +1,6 @@
 package org.example.mindmappingsoftware.controllers;
 
 import org.example.mindmappingsoftware.models.User;
-import org.example.mindmappingsoftware.services.MindMapHistoryService;
-import org.example.mindmappingsoftware.services.MindMapService;
 import org.example.mindmappingsoftware.services.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,5 +93,3 @@ public class UserController {
         }
     }
 }
-
-

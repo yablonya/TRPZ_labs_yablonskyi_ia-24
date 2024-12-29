@@ -83,7 +83,10 @@ public class MindMapService {
             logger.warn("Mind map with ID {} not found for user {}", mindMapId, user.getId());
             throw e;
         } catch (Exception e) {
-            logger.error("Error updating mind map name for mind map {} by user {}: {}", mindMapId, user.getId(), e.getMessage());
+            logger.error(
+                    "Error updating mind map name for mind map {} by user {}: {}",
+                    mindMapId, user.getId(), e.getMessage()
+            );
             throw new RuntimeException("Failed to update mind map name", e);
         }
     }
@@ -198,7 +201,10 @@ public class MindMapService {
             logger.warn("Mind map with ID {} not found for user {}", mindMapId, user.getId());
             throw e;
         } catch (Exception e) {
-            logger.error("Error retrieving full mind map for user {} and mind map ID {}: {}", user.getId(), mindMapId, e.getMessage());
+            logger.error(
+                    "Error retrieving full mind map for user {} and mind map ID {}: {}",
+                    user.getId(), mindMapId, e.getMessage()
+            );
             throw new RuntimeException("Failed to retrieve full mind map", e);
         }
     }
@@ -322,7 +328,9 @@ public class MindMapService {
             }
 
             return connectionRepository.findAll().stream()
-                    .filter(connection -> nodes.contains(connection.getFromNode()) || nodes.contains(connection.getToNode()))
+                    .filter(connection ->
+                            nodes.contains(connection.getFromNode()) || nodes.contains(connection.getToNode())
+                    )
                     .collect(Collectors.toList());
         } catch (NoSuchElementException e) {
             logger.warn("Mind map with ID {} not found", mindMapId);

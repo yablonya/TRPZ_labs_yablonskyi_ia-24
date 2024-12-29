@@ -24,4 +24,3 @@ public class CookiePrototype {
         return clearedCookie;
     }
 }
-

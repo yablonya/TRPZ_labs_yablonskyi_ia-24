@@ -57,5 +57,4 @@ public class NodeCreationRequest {
     public void setNodeFiles(List<NodeFile> nodeFiles) {
         this.nodeFiles = nodeFiles;
     }
-
 }

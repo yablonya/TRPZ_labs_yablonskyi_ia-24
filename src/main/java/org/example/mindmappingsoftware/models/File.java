@@ -1,6 +1,5 @@
 package org.example.mindmappingsoftware.models;
 
-
 import jakarta.persistence.*;
 
 import java.util.UUID;
